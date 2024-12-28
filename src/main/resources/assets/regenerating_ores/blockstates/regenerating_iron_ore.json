@@ -1,0 +1,6 @@
+{
+  "variants": {
+    "regenerating=false": { "model": "regenerating_ores:block/iron_ore_normal" },
+    "regenerating=true": { "model": "regenerating_ores:block/iron_ore_regenerating" }
+  }
+}
