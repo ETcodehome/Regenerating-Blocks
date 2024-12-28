@@ -1,6 +1,6 @@
 {
   "variants": {
-    "regenerating=false": { "model": "minecraft:block/iron_ore" },
+    "regenerating=false": { "model": "minecraft:block/gold_ore" },
     "regenerating=true": { "model": "minecraft:block/bedrock" }
   }
 }

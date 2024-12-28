@@ -1,5 +1,6 @@
-package me.jesuismister.regenerating_ores;
+package me.jesuismister.regenerating_ores.items;
 
+import me.jesuismister.regenerating_ores.RegeneratingOres;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredRegister;
 

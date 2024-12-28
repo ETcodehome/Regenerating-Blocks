@@ -1,5 +1,6 @@
-package me.jesuismister.regenerating_ores;
+package me.jesuismister.regenerating_ores.blocks;
 
+import me.jesuismister.regenerating_ores.ServerConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -11,11 +12,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 
-public class RegeneratingIronOre extends Block {
+public class RegeneratingOreBlock extends Block {
     // Propriété pour indiquer si le bloc est en régénération
     public static final BooleanProperty REGENERATING = BooleanProperty.create("regenerating");
 
-    public RegeneratingIronOre() {
+    public RegeneratingOreBlock() {
         super(BlockBehaviour.Properties.ofFullCopy(Blocks.STONE).strength(3.0f, 3.0f));
         // Définit l'état initial du bloc
         this.registerDefaultState(this.defaultBlockState().setValue(REGENERATING, false));
@@ -38,8 +39,8 @@ public class RegeneratingIronOre extends Block {
             // Change l'état du bloc en régénération
             level.setBlock(pos, this.defaultBlockState().setValue(REGENERATING, true), 3);
 
-            // Planifie le retour à l'état normal après X temps
-            level.scheduleTick(pos, this, 20 * 10);
+            // Planifie le retour à l'état normal après X secondes
+            level.scheduleTick(pos, this, 20 * ServerConfig.getRegenerationDelay(state.getBlock().getName().getString().split(" ")[1]));
         }
     }
 
