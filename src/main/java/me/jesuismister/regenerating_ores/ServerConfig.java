@@ -19,28 +19,28 @@ public class ServerConfig {
         builder.comment("Configuration for Regenerating Ores").push("general");
 
         COAL = builder
-                .comment("Time in seconds before iron regenerate.")
+                .comment("Time in seconds before coal regenerate.")
                 .defineInRange("coalDelay", 10, 1, 3600);
         COPPER = builder
-                .comment("Time in seconds before iron regenerate.")
+                .comment("Time in seconds before copper regenerate.")
                 .defineInRange("copperDelay", 20, 1, 3600);
         DIAMOND = builder
-                .comment("Time in seconds before iron regenerate.")
+                .comment("Time in seconds before diamond regenerate.")
                 .defineInRange("diamondDelay", 300, 1, 3600);
         EMERALD = builder
-                .comment("Time in seconds before iron regenerate.")
+                .comment("Time in seconds before emerald regenerate.")
                 .defineInRange("emeraldDelay", 60, 1, 3600);
         GOLD = builder
-                .comment("Time in seconds before iron regenerate.")
+                .comment("Time in seconds before gold regenerate.")
                 .defineInRange("goldDelay", 30, 1, 3600);
         IRON = builder
                 .comment("Time in seconds before iron regenerate.")
                 .defineInRange("ironDelay", 20, 1, 3600);
         LAPIS = builder
-                .comment("Time in seconds before iron regenerate.")
+                .comment("Time in seconds before lapis regenerate.")
                 .defineInRange("lapisDelay", 30, 1, 3600);
         REDSTONE = builder
-                .comment("Time in seconds before iron regenerate.")
+                .comment("Time in seconds before redstone regenerate.")
                 .defineInRange("redstoneDelay", 30, 1, 3600);
 
         builder.pop();
