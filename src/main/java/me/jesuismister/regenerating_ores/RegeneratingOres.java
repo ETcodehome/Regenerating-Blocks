@@ -81,7 +81,6 @@ public class RegeneratingOres {
         public MyPack(PackLocationInfo info) {
             super(info);
 
-            // Add your dynamic JSON here
             files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "data/minecraft/tags/block/mineable/pickaxe.json"),
                 "{\n" +
                 "  \"values\": [\n" +
@@ -117,6 +116,234 @@ public class RegeneratingOres {
                 "    \"regenerating_ores:regenerating_copper_ore\",\n" +
                 "    \"regenerating_ores:regenerating_iron_ore\",\n" +
                 "    \"regenerating_ores:regenerating_lapis_ore\"\n" +
+                "  ]\n" +
+                "}"
+            );
+
+            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "resources/assets/regenerating_ores/lang/en_us.json"),
+                "{\n" +
+                "  \"block.regenerating_ores.regenerating_iron_ore\": \"Regenerating Iron Ore\",\n" +
+                "  \"block.regenerating_ores.regenerating_gold_ore\": \"Regenerating Gold Ore\",\n" +
+                "  \"block.regenerating_ores.regenerating_coal_ore\": \"Regenerating Coal Ore\",\n" +
+                "  \"block.regenerating_ores.regenerating_lapis_ore\": \"Regenerating Lapis Ore\",\n" +
+                "  \"block.regenerating_ores.regenerating_redstone_ore\": \"Regenerating Redstone Ore\",\n" +
+                "  \"block.regenerating_ores.regenerating_diamond_ore\": \"Regenerating Diamond Ore\",\n" +
+                "  \"block.regenerating_ores.regenerating_emerald_ore\": \"Regenerating Emerald Ore\",\n" +
+                "  \"block.regenerating_ores.regenerating_copper_ore\": \"Regenerating Copper Ore\",\n" +
+                "  \"creativetab.regenerating_ores.regenerating_ores_tab_name\": \"Regenerating Ores\"\n" +
+                "}\n"
+            );
+
+            ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+            final String REPLACE_BLOCK = "minecraft:block/bedrock";
+
+            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "resources/assets/regenerating_ores/blockstates/regenerating_coal_ore.json"),
+                "{\n" +
+                "  \"variants\": {\n" +
+                "    \"regenerating=false\": { \"model\": \"minecraft:block/coal_ore\" },\n" +
+                "    \"regenerating=true\": { \"model\": \"" + REPLACE_BLOCK + "\" }\n" +
+                "  }\n" +
+                "}"
+            );
+
+            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "resources/assets/regenerating_ores/blockstates/regenerating_copper_ore.json"),
+                "{\n" +
+                "  \"variants\": {\n" +
+                "    \"regenerating=false\": { \"model\": \"minecraft:block/copper_ore\" },\n" +
+                "    \"regenerating=true\": { \"model\": \"" + REPLACE_BLOCK + "\" }\n" +
+                "  }\n" +
+                "}"
+            );
+
+            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "resources/assets/regenerating_ores/blockstates/regenerating_diamond_ore.json"),
+                "{\n" +
+                "  \"variants\": {\n" +
+                "    \"regenerating=false\": { \"model\": \"minecraft:block/diamond_ore\" },\n" +
+                "    \"regenerating=true\": { \"model\": \"" + REPLACE_BLOCK + "\" }\n" +
+                "  }\n" +
+                "}"
+            );
+
+            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "resources/assets/regenerating_ores/blockstates/regenerating_emerald_ore.json"),
+                "{\n" +
+                "  \"variants\": {\n" +
+                "    \"regenerating=false\": { \"model\": \"minecraft:block/emerald_ore\" },\n" +
+                "    \"regenerating=true\": { \"model\": \"" + REPLACE_BLOCK + "\" }\n" +
+                "  }\n" +
+                "}"
+            );
+
+            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "resources/assets/regenerating_ores/blockstates/regenerating_gold_ore.json"),
+                "{\n" +
+                "  \"variants\": {\n" +
+                "    \"regenerating=false\": { \"model\": \"minecraft:block/gold_ore\" },\n" +
+                "    \"regenerating=true\": { \"model\": \"" + REPLACE_BLOCK + "\" }\n" +
+                "  }\n" +
+                "}"
+            );
+
+            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "resources/assets/regenerating_ores/blockstates/regenerating_iron_ore.json"),
+                "{\n" +
+                "  \"variants\": {\n" +
+                "    \"regenerating=false\": { \"model\": \"minecraft:block/iron_ore\" },\n" +
+                "    \"regenerating=true\": { \"model\": \"" + REPLACE_BLOCK + "\" }\n" +
+                "  }\n" +
+                "}"
+            );
+
+            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "resources/assets/regenerating_ores/blockstates/regenerating_lapis_ore.json"),
+                "{\n" +
+                "  \"variants\": {\n" +
+                "    \"regenerating=false\": { \"model\": \"minecraft:block/lapis_ore\" },\n" +
+                "    \"regenerating=true\": { \"model\": \"" + REPLACE_BLOCK + "\" }\n" +
+                "  }\n" +
+                "}"
+            );
+
+            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "resources/assets/regenerating_ores/blockstates/regenerating_redstone_ore.json"),
+                "{\n" +
+                "  \"variants\": {\n" +
+                "    \"regenerating=false\": { \"model\": \"minecraft:block/redstone_ore\" },\n" +
+                "    \"regenerating=true\": { \"model\": \"" + REPLACE_BLOCK + "\" }\n" +
+                "  }\n" +
+                "}"
+            );
+
+            ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "resources/data/regenerating_ores/loot_table/blocks/regenerating_coal_ore.json"),
+                "{\n" +
+                "  \"type\": \"minecraft:block\",\n" +
+                "  \"pools\": [\n" +
+                "    {\n" +
+                "      \"rolls\": 1,\n" +
+                "      \"entries\": [\n" +
+                "        {\n" +
+                "          \"type\": \"minecraft:loot_table\",\n" +
+                "          \"name\": \"minecraft:blocks/coal_ore\"\n" +
+                "        }\n" +
+                "      ]\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}"
+            );
+
+            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "resources/data/regenerating_ores/loot_table/blocks/regenerating_copper_ore.json"),
+                "{\n" +
+                "  \"type\": \"minecraft:block\",\n" +
+                "  \"pools\": [\n" +
+                "    {\n" +
+                "      \"rolls\": 1,\n" +
+                "      \"entries\": [\n" +
+                "        {\n" +
+                "          \"type\": \"minecraft:loot_table\",\n" +
+                "          \"name\": \"minecraft:blocks/copper_ore\"\n" +
+                "        }\n" +
+                "      ]\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}"
+            );
+
+            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "resources/data/regenerating_ores/loot_table/blocks/regenerating_diamond_ore.json"),
+                "{\n" +
+                "  \"type\": \"minecraft:block\",\n" +
+                "  \"pools\": [\n" +
+                "    {\n" +
+                "      \"rolls\": 1,\n" +
+                "      \"entries\": [\n" +
+                "        {\n" +
+                "          \"type\": \"minecraft:loot_table\",\n" +
+                "          \"name\": \"minecraft:blocks/diamond_ore\"\n" +
+                "        }\n" +
+                "      ]\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}"
+            );
+
+            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "resources/data/regenerating_ores/loot_table/blocks/regenerating_emerald_ore.json"),
+                "{\n" +
+                "  \"type\": \"minecraft:block\",\n" +
+                "  \"pools\": [\n" +
+                "    {\n" +
+                "      \"rolls\": 1,\n" +
+                "      \"entries\": [\n" +
+                "        {\n" +
+                "          \"type\": \"minecraft:loot_table\",\n" +
+                "          \"name\": \"minecraft:blocks/emerald_ore\"\n" +
+                "        }\n" +
+                "      ]\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}"
+            );
+
+            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "resources/data/regenerating_ores/loot_table/blocks/regenerating_gold_ore.json"),
+                "{\n" +
+                "  \"type\": \"minecraft:block\",\n" +
+                "  \"pools\": [\n" +
+                "    {\n" +
+                "      \"rolls\": 1,\n" +
+                "      \"entries\": [\n" +
+                "        {\n" +
+                "          \"type\": \"minecraft:loot_table\",\n" +
+                "          \"name\": \"minecraft:blocks/gold_ore\"\n" +
+                "        }\n" +
+                "      ]\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}"
+            );
+
+            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "resources/data/regenerating_ores/loot_table/blocks/regenerating_iron_ore.json"),
+                "{\n" +
+                "  \"type\": \"minecraft:block\",\n" +
+                "  \"pools\": [\n" +
+                "    {\n" +
+                "      \"rolls\": 1,\n" +
+                "      \"entries\": [\n" +
+                "        {\n" +
+                "          \"type\": \"minecraft:loot_table\",\n" +
+                "          \"name\": \"minecraft:blocks/iron_ore\"\n" +
+                "        }\n" +
+                "      ]\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}"
+            );
+
+            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "resources/data/regenerating_ores/loot_table/blocks/regenerating_lapis_ore.json"),
+                "{\n" +
+                "  \"type\": \"minecraft:block\",\n" +
+                "  \"pools\": [\n" +
+                "    {\n" +
+                "      \"rolls\": 1,\n" +
+                "      \"entries\": [\n" +
+                "        {\n" +
+                "          \"type\": \"minecraft:loot_table\",\n" +
+                "          \"name\": \"minecraft:blocks/lapis_ore\"\n" +
+                "        }\n" +
+                "      ]\n" +
+                "    }\n" +
+                "  ]\n" +
+                "}"
+            );
+
+            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "resources/data/regenerating_ores/loot_table/blocks/regenerating_redstone_ore.json"),
+                "{\n" +
+                "  \"type\": \"minecraft:block\",\n" +
+                "  \"pools\": [\n" +
+                "    {\n" +
+                "      \"rolls\": 1,\n" +
+                "      \"entries\": [\n" +
+                "        {\n" +
+                "          \"type\": \"minecraft:loot_table\",\n" +
+                "          \"name\": \"minecraft:blocks/redstone_ore\"\n" +
+                "        }\n" +
+                "      ]\n" +
+                "    }\n" +
                 "  ]\n" +
                 "}"
             );
