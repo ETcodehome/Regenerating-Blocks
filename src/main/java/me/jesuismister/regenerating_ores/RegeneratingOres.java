@@ -46,13 +46,14 @@ public class RegeneratingOres {
         ModBlocks.supportedBlocks.add(new Regenerable("minecraft", "redstone_ore", 30, false, true));
         ModBlocks.supportedBlocks.add(new Regenerable("minecraft", "stone", 5, false, false));
 
+        // append virtual resources
+        modEventBus.addListener(this::setupDynamicPack);
+
         // ready the deferred blocks
         for (Regenerable block : ModBlocks.supportedBlocks) {
             block.deferredBlock = ModBlocks.registerBlock("regenerating_" + block.blockName, RegeneratingOreBlock::new);
         }
 
-        // append virtual resources
-        modEventBus.addListener(this::setupDynamicPack);
 
         // do registration
         ModBlocks.register(modEventBus);
@@ -67,7 +68,7 @@ public class RegeneratingOres {
     private void setupDynamicPack(AddPackFindersEvent event) {
         if (event.getPackType().ordinal() != 1) return;
 
-        PackLocationInfo locInfo = new PackLocationInfo("regenerating_ores", Component.literal("Regenerating Ores Virtual Resources"), PackSource.BUILT_IN, Optional.empty());
+        PackLocationInfo locInfo = new PackLocationInfo("regenerating_ores", Component.literal("Regenerating Ores Resources"), PackSource.BUILT_IN, Optional.empty());
 
         // Explicitly define the ResourcesSupplier to avoid functional interface ambiguity
         Pack.ResourcesSupplier supplier = new Pack.ResourcesSupplier() {
@@ -121,7 +122,7 @@ public class RegeneratingOres {
                 working += "  \"block.regenerating_ores.regenerating_" + block.blockName + "\": \"Regenerating " + block.GetCleanName() + "\",\n";
             }
             working += "  \"creativetab.regenerating_ores.regenerating_ores_tab_name\": \"Regenerating Ores\"\n}\n";
-            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "resources/assets/regenerating_ores/lang/en_us.json"), working);
+            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "assets.regenerating_ores.lang/en_us.json"), working);
         }
 
         public void addPickaxeSupport(){
@@ -161,7 +162,7 @@ public class RegeneratingOres {
             // determines what the block looks like while regenerating,
             final String REPLACE_BLOCK = "minecraft:block/bedrock";
 
-            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "resources/assets/regenerating_ores/blockstates/regenerating_" + blockName + ".json"),
+            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "assets/regenerating_ores/blockstates/regenerating_" + blockName + ".json"),
                 "{\n" +
                 "  \"variants\": {\n" +
                 "    \"regenerating=false\": { \"model\": \"" + namespace + ":block/" + blockName + "\" },\n" +
@@ -173,7 +174,7 @@ public class RegeneratingOres {
 
         public void addMirroredLootTable(String namespace, String blockName)
         {
-            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "resources/data/regenerating_ores/loot_table/blocks/regenerating_" + blockName + ".json"),
+            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "data/regenerating_ores/loot_table/blocks/regenerating_" + blockName + ".json"),
                 "{\n" +
                 "  \"type\": \"minecraft:block\",\n" +
                 "  \"pools\": [\n" +
@@ -192,19 +193,46 @@ public class RegeneratingOres {
         }
 
         @Override
-        public IoSupplier<InputStream> getResource(PackType t, ResourceLocation l) {
-            String s = files.get(l);
-            return s == null ? null : () -> new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8));
+        public IoSupplier<InputStream> getResource(PackType type, ResourceLocation location) {
+
+            String content = files.get(location);
+            if (content == null) return null;
+
+            return () -> new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
         }
 
-        @Override // Required to satisfy the interface in 1.21.1
+        @Override
         public IoSupplier<InputStream> getRootResource(String... paths) {
+
+            // we return the pack metadata manually here since the pack is dynamic
+            if (paths[0] == "pack.mcmeta") {
+                String metadata = """
+                {
+                  "pack": {
+                    "description": "Regenerating Ores Resources",
+                    "pack_format": 48
+                  }
+                }
+                """;
+                return () -> new ByteArrayInputStream(metadata.getBytes(StandardCharsets.UTF_8));
+            }
+
             return null;
         }
 
         @Override
-        public void listResources(PackType t, String ns, String p, ResourceOutput out) {
-            files.forEach((loc, s) -> { if (loc.getNamespace().equals(ns) && loc.getPath().startsWith(p)) out.accept(loc, getResource(t, loc)); });
+        public void listResources(PackType type, String namespace, String path, ResourceOutput output) {
+
+            //return if it's not chasing resources in our namespace
+            if (namespace != MOD_ID){
+                return;
+            }
+
+            files.keySet().forEach(location -> {
+                if (location.getPath().startsWith(path)) {
+                    output.accept(location, this.getResource(type, location));
+                }
+            });
         }
 
         @Override public Set<String> getNamespaces(PackType t) { return Set.of(MOD_ID, "minecraft"); }
