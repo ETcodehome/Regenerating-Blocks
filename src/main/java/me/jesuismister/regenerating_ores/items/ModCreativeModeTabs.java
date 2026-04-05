@@ -19,7 +19,11 @@ public class ModCreativeModeTabs {
     public static final Supplier<CreativeModeTab> TABS = CREATIVE_MODE_TAB.register("regenerating_ores_tab",
             () -> CreativeModeTab.builder().icon(() -> new ItemStack(Blocks.DIAMOND_ORE))
                     .title(Component.translatable("creativetab.regenerating_ores.regenerating_ores_tab_name"))
-                    .displayItems((itemDisplayParameters, output) -> {}).build());
+                    .displayItems(
+                        (itemDisplayParameters, output) -> {
+                            ModBlocks.supportedBlocks.forEach(block -> output.accept(block.deferredBlock));
+                        }
+                    ).build());
 
     public static void register(IEventBus eventBus) {
         CREATIVE_MODE_TAB.register(eventBus);

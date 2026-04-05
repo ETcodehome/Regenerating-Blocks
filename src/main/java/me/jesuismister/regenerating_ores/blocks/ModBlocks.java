@@ -16,8 +16,7 @@ import java.util.function.Supplier;
 
 public class ModBlocks {
 
-    public static ArrayList<Regenerable> supportedBlocks = new ArrayList();
-
+    public static ArrayList<Regenerable> supportedBlocks;
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.createBlocks(RegeneratingOres.MOD_ID);
 
     public static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<T> block) {

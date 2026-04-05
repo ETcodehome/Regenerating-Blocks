@@ -10,9 +10,7 @@ import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.repository.Pack;
 import net.neoforged.fml.config.ModConfig;
-import org.slf4j.Logger;
 
-import com.mojang.logging.LogUtils;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
@@ -32,21 +30,44 @@ import java.util.*;
 @Mod(RegeneratingOres.MOD_ID)
 public class RegeneratingOres {
     public static final String MOD_ID = "regenerating_ores";
-    private static final Logger LOGGER = LogUtils.getLogger();
 
     public RegeneratingOres(IEventBus modEventBus, ModContainer modContainer) {
+
+        // TODO - process a json config that defines these instead
+        // use map to allow for dict lookup by block type Map<String, Regenerable> supportedBlocks = new HashMap<>();
+        ModBlocks.supportedBlocks = new ArrayList();
+        ModBlocks.supportedBlocks.add(new Regenerable("minecraft", "coal_ore", 10, true, false));
+        ModBlocks.supportedBlocks.add(new Regenerable("minecraft", "copper_ore", 20, true, false));
+        ModBlocks.supportedBlocks.add(new Regenerable("minecraft", "diamond_ore", 300, false, true));
+        ModBlocks.supportedBlocks.add(new Regenerable("minecraft", "emerald_ore", 60, false, true));
+        ModBlocks.supportedBlocks.add(new Regenerable("minecraft", "gold_ore", 30, false, true));
+        ModBlocks.supportedBlocks.add(new Regenerable("minecraft", "iron_ore", 20, true, false));
+        ModBlocks.supportedBlocks.add(new Regenerable("minecraft", "lapis_ore", 30, true, false));
+        ModBlocks.supportedBlocks.add(new Regenerable("minecraft", "redstone_ore", 30, false, true));
+        ModBlocks.supportedBlocks.add(new Regenerable("minecraft", "stone", 5, false, false));
+
+        // ready the deferred blocks
+        for (Regenerable block : ModBlocks.supportedBlocks) {
+            block.deferredBlock = ModBlocks.registerBlock("regenerating_" + block.blockName, RegeneratingOreBlock::new);
+        }
+
+        // append virtual resources
+        modEventBus.addListener(this::setupDynamicPack);
+
+        // do registration
+        ModBlocks.register(modEventBus);
         ModCreativeModeTabs.register(modEventBus);
         ModItems.register(modEventBus);
-        ModBlocks.register(modEventBus);
+
+        // load config stuff
         modContainer.registerConfig(ModConfig.Type.SERVER, ServerConfig.CONFIG_SPEC);
 
-        modEventBus.addListener(this::setupDynamicPack);
     }
 
     private void setupDynamicPack(AddPackFindersEvent event) {
-        if (event.getPackType() != PackType.SERVER_DATA) return;
+        if (event.getPackType().ordinal() != 1) return;
 
-        PackLocationInfo locInfo = new PackLocationInfo("dynamic_res", Component.literal("Dynamic"), PackSource.BUILT_IN, Optional.empty());
+        PackLocationInfo locInfo = new PackLocationInfo("regenerating_ores", Component.literal("Regenerating Ores Virtual Resources"), PackSource.BUILT_IN, Optional.empty());
 
         // Explicitly define the ResourcesSupplier to avoid functional interface ambiguity
         Pack.ResourcesSupplier supplier = new Pack.ResourcesSupplier() {
@@ -71,6 +92,7 @@ public class RegeneratingOres {
         if (pack != null) {
             event.addRepositorySource(repository -> repository.accept(pack));
         }
+
     }
 
     private static class MyPack extends AbstractPackResources {
@@ -79,42 +101,8 @@ public class RegeneratingOres {
         public MyPack(PackLocationInfo info) {
             super(info);
 
-            // TODO - process a json config that defines these instead
-            ModBlocks.supportedBlocks.add(new Regenerable("minecraft", "coal_ore", 10, true, false));
-            ModBlocks.supportedBlocks.add(new Regenerable("minecraft", "copper_ore", 20, true, false));
-            ModBlocks.supportedBlocks.add(new Regenerable("minecraft", "diamond_ore", 300, false, true));
-            ModBlocks.supportedBlocks.add(new Regenerable("minecraft", "emerald_ore", 60, false, true));
-            ModBlocks.supportedBlocks.add(new Regenerable("minecraft", "gold_ore", 30, false, true));
-            ModBlocks.supportedBlocks.add(new Regenerable("minecraft", "iron_ore", 20, true, false));
-            ModBlocks.supportedBlocks.add(new Regenerable("minecraft", "lapis_ore", 30, true, false));
-            ModBlocks.supportedBlocks.add(new Regenerable("minecraft", "redstone_ore", 30, false, true));
-
             addPickaxeSupport();
-
-            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "data/minecraft/tags/block/needs_iron_tool.json"),
-                "{\n" +
-                "  \"replace\": false,\n" +
-                "  \"values\": [\n" +
-                "    \"regenerating_ores:regenerating_diamond_ore\",\n" +
-                "    \"regenerating_ores:regenerating_emerald_ore\",\n" +
-                "    \"regenerating_ores:regenerating_gold_ore\",\n" +
-                "    \"regenerating_ores:regenerating_redstone_ore\"\n" +
-                "  ]\n" +
-                "}"
-            );
-
-            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "data/minecraft/tags/block/needs_stone_tool.json"),
-                "{\n" +
-                "  \"replace\": false,\n" +
-                "  \"values\": [\n" +
-                "    \"regenerating_ores:regenerating_coal_ore\",\n" +
-                "    \"regenerating_ores:regenerating_copper_ore\",\n" +
-                "    \"regenerating_ores:regenerating_iron_ore\",\n" +
-                "    \"regenerating_ores:regenerating_lapis_ore\"\n" +
-                "  ]\n" +
-                "}"
-            );
-
+            addPickaxeSpecializations();
             addLanguageSupport();
 
             for (Regenerable block : ModBlocks.supportedBlocks) {
@@ -123,10 +111,6 @@ public class RegeneratingOres {
 
             for (Regenerable block : ModBlocks.supportedBlocks) {
                 addMirroredLootTable(block.namespace, block.blockName);
-            }
-
-            for (Regenerable block : ModBlocks.supportedBlocks) {
-                ModBlocks.registerBlock("regenerating_" + block.blockName, RegeneratingOreBlock::new);
             }
 
         }
@@ -149,10 +133,32 @@ public class RegeneratingOres {
             files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "data/minecraft/tags/block/mineable/pickaxe.json"), working);
         }
 
+        public void addPickaxeSpecializations(){
+
+            // stone picks
+            String workingStone = "{\n  \"replace\": false,\n  \"values\": [\n";
+            for (Regenerable block : ModBlocks.supportedBlocks) {
+                if (block.needStonePick && !block.needIronPick) {
+                    workingStone += "    \"regenerating_ores:regenerating_" + block.blockName + "\",\n";
+                }
+            }
+            workingStone += "  ]\n}";
+            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "data/minecraft/tags/block/needs_stone_tool.json"), workingStone);
+
+            // iron picks
+            String workingIron = "{\n  \"replace\": false,\n  \"values\": [\n";
+            for (Regenerable block : ModBlocks.supportedBlocks) {
+                if (block.needStonePick && !block.needIronPick) {
+                    workingIron += "    \"regenerating_ores:regenerating_" + block.blockName + "\",\n";
+                }
+            }
+            workingIron += "  ]\n}";
+            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "data/minecraft/tags/block/needs_iron_tool.json"), workingIron);
+        }
+
         public void addRegeneratingAesthetic(String namespace, String blockName)
         {
             // determines what the block looks like while regenerating,
-            // TODO - should probably be config file driven
             final String REPLACE_BLOCK = "minecraft:block/bedrock";
 
             files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "resources/assets/regenerating_ores/blockstates/regenerating_" + blockName + ".json"),

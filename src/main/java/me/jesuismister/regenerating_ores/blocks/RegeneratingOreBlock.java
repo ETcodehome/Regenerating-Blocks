@@ -40,7 +40,8 @@ public class RegeneratingOreBlock extends Block {
             level.setBlock(pos, this.defaultBlockState().setValue(REGENERATING, true), 3);
 
             // Planifie le retour à l'état normal après X secondes
-            level.scheduleTick(pos, this, 20 * ServerConfig.getRegenerationDelay(state.getBlock().getName().getString().split(" ")[1]));
+            // TODO - Fix this back up using block state lookup
+            level.scheduleTick(pos, this, 200);
         }
     }
 

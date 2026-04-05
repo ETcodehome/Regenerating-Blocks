@@ -48,17 +48,8 @@ public class ServerConfig {
     }
 
     public static int getRegenerationDelay(String oreType) {
-        return switch (oreType.toLowerCase()) {
-            case "coal" -> COAL.get();
-            case "copper" -> COPPER.get();
-            case "diamond" -> DIAMOND.get();
-            case "emerald" -> EMERALD.get();
-            case "gold" -> GOLD.get();
-            case "iron" -> IRON.get();
-            case "lapis" -> LAPIS.get();
-            case "redstone" -> REDSTONE.get();
-            default -> 1;
-        };
+        // TODO - improve
+        return 10;
     }
 
 }
