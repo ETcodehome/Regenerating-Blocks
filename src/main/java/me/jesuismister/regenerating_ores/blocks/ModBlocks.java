@@ -12,11 +12,13 @@ import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.function.Supplier;
 
 public class ModBlocks {
 
     public static ArrayList<Regenerable> supportedBlocks;
+    public static HashMap<String, String> blockMap;
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.createBlocks(RegeneratingOres.MOD_ID);
 
     public static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<T> block) {

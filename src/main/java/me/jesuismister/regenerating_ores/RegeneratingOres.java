@@ -37,6 +37,7 @@ public class RegeneratingOres {
     public RegeneratingOres(IEventBus modEventBus, ModContainer modContainer) {
 
         // TODO - process a json config that defines these instead
+
         // use map to allow for dict lookup by block type Map<String, Regenerable> supportedBlocks = new HashMap<>();
         ModBlocks.supportedBlocks = new ArrayList();
         ModBlocks.supportedBlocks.add(new Regenerable("minecraft", "coal_ore", 10, true, false));
@@ -48,6 +49,17 @@ public class RegeneratingOres {
         ModBlocks.supportedBlocks.add(new Regenerable("minecraft", "lapis_ore", 30, true, false));
         ModBlocks.supportedBlocks.add(new Regenerable("minecraft", "redstone_ore", 30, false, true));
         ModBlocks.supportedBlocks.add(new Regenerable("minecraft", "stone", 5, false, false));
+
+        ModBlocks.blockMap = new HashMap<String, String>();
+        ModBlocks.blockMap.put("regenerating_ores:regenerating_coal_ore","minecraft:coal_ore");
+        ModBlocks.blockMap.put("regenerating_ores:regenerating_copper_ore","minecraft:copper_ore");
+        ModBlocks.blockMap.put("regenerating_ores:regenerating_iron_ore","minecraft:iron_ore");
+        ModBlocks.blockMap.put("regenerating_ores:regenerating_diamond_ore","minecraft:diamond_ore");
+        ModBlocks.blockMap.put("regenerating_ores:regenerating_emerald_ore","minecraft:emerald_ore");
+        ModBlocks.blockMap.put("regenerating_ores:regenerating_redstone_ore","minecraft:redstone_ore");
+        ModBlocks.blockMap.put("regenerating_ores:regenerating_lapis_ore","minecraft:lapis_ore");
+        ModBlocks.blockMap.put("regenerating_ores:regenerating_gold_ore","minecraft:gold_ore");
+        ModBlocks.blockMap.put("regenerating_ores:regenerating_stone","minecraft:stone");
 
         // append virtual resources
         modEventBus.addListener(this::setupDynamicPack);
@@ -64,9 +76,7 @@ public class RegeneratingOres {
 
         // load config stuff
         modContainer.registerConfig(ModConfig.Type.SERVER, ServerConfig.CONFIG_SPEC);
-
     }
-
 
     private void setupDynamicPack(AddPackFindersEvent event) {
 
@@ -91,7 +101,7 @@ public class RegeneratingOres {
                     locInfo,
                     supplier,
                     PackType.CLIENT_RESOURCES,
-                    new PackSelectionConfig(true, Pack.Position.BOTTOM, false)
+                    new PackSelectionConfig(true, Pack.Position.TOP, false)
             );
 
             if (clientPack != null) {
@@ -105,7 +115,7 @@ public class RegeneratingOres {
                     locInfo,
                     supplier,
                     PackType.SERVER_DATA,
-                    new PackSelectionConfig(true, Pack.Position.BOTTOM, false)
+                    new PackSelectionConfig(true, Pack.Position.TOP, false)
             );
 
             if (serverPack != null) {
@@ -121,17 +131,12 @@ public class RegeneratingOres {
         public MyPack(PackLocationInfo info) {
             super(info);
 
-            addPickaxeSupport();
             addPickaxeSpecializations();
             addLanguageSupport();
             addInventoryAesthetic();
 
             for (Regenerable block : ModBlocks.supportedBlocks) {
                 addRegeneratingAesthetic(block.namespace, block.blockName);
-            }
-
-            for (Regenerable block : ModBlocks.supportedBlocks) {
-                addMirroredLootTable(block.namespace, block.blockName);
             }
 
         }
@@ -157,23 +162,23 @@ public class RegeneratingOres {
             files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "lang/en_us.json"), working);
         }
 
-        public void addPickaxeSupport(){
-            String working = "{\n" +
-                    "\"values\": [";
-
-            for (Regenerable block : ModBlocks.supportedBlocks) {
-                working += "\"regenerating_ores:regenerating_" + block.blockName + "\",";
-            }
-
-            if (working.endsWith(",")) {
-                working = working.substring(0, working.length() - 1); // trim the trailing comma
-            }
-
-            working += "]\n}";
-            files.put(ResourceLocation.fromNamespaceAndPath("minecraft", "tags/block/mineable/pickaxe.json"), working);
-        }
-
         public void addPickaxeSpecializations(){
+
+            // make picks the tool used for breaking regenerable blocks
+            String proxyTag = """
+                    {"values": [
+                    """;
+            for (Regenerable block : ModBlocks.supportedBlocks) {
+                    proxyTag += "\"regenerating_ores:regenerating_" + block.blockName + "\",";
+            }
+
+            if (proxyTag.endsWith(",")) {
+                proxyTag = proxyTag.substring(0, proxyTag.length() - 1); // trim the trailing comma
+            }
+
+            proxyTag += "]}";
+
+            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "tags/block/mineable/pickaxe.json"), proxyTag);
 
             // stone picks
             String workingStone = "{\n" +
@@ -190,7 +195,7 @@ public class RegeneratingOres {
             }
 
             workingStone += "]\n}";
-            files.put(ResourceLocation.fromNamespaceAndPath("minecraft", "tags/block/needs_stone_tool.json"), workingStone);
+            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "tags/block/needs_stone_tool.json"), workingStone);
 
             // iron picks
             String workingIron = "{\n" +
@@ -207,7 +212,7 @@ public class RegeneratingOres {
             }
 
             workingIron += "]\n}";
-            files.put(ResourceLocation.fromNamespaceAndPath("minecraft", "tags/block/needs_iron_tool.json"), workingIron);
+            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "tags/block/needs_iron_tool.json"), workingIron);
         }
 
         public void addRegeneratingAesthetic(String namespace, String blockName)
@@ -222,64 +227,6 @@ public class RegeneratingOres {
                 "    \"regenerating=true\": { \"model\": \"" + REPLACE_BLOCK + "\" }\n" +
                 "  }\n" +
                 "}"
-            );
-        }
-
-        public void addMirroredLootTable(String namespace, String blockName)
-        {
-            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "loot_table/blocks/regenerating_" + blockName + ".json"),
-                "{\n" +
-                        "  \"type\": \"minecraft:block\",\n" +
-                        "  \"pools\": [\n" +
-                        "    {\n" +
-                        "      \"bonus_rolls\": 0.0,\n" +
-                        "      \"entries\": [\n" +
-                        "        {\n" +
-                        "          \"type\": \"minecraft:alternatives\",\n" +
-                        "          \"children\": [\n" +
-                        "            {\n" +
-                        "              \"type\": \"minecraft:item\",\n" +
-                        "              \"conditions\": [\n" +
-                        "                {\n" +
-                        "                  \"condition\": \"minecraft:match_tool\",\n" +
-                        "                  \"predicate\": {\n" +
-                        "                    \"predicates\": {\n" +
-                        "                      \"minecraft:enchantments\": [\n" +
-                        "                        {\n" +
-                        "                          \"enchantments\": \"minecraft:silk_touch\",\n" +
-                        "                          \"levels\": {\n" +
-                        "                            \"min\": 1\n" +
-                        "                          }\n" +
-                        "                        }\n" +
-                        "                      ]\n" +
-                        "                    }\n" +
-                        "                  }\n" +
-                        "                }\n" +
-                        "              ],\n" +
-                        "              \"name\": \"minecraft:coal_ore\"\n" +
-                        "            },\n" +
-                        "            {\n" +
-                        "              \"type\": \"minecraft:item\",\n" +
-                        "              \"functions\": [\n" +
-                        "                {\n" +
-                        "                  \"enchantment\": \"minecraft:fortune\",\n" +
-                        "                  \"formula\": \"minecraft:ore_drops\",\n" +
-                        "                  \"function\": \"minecraft:apply_bonus\"\n" +
-                        "                },\n" +
-                        "                {\n" +
-                        "                  \"function\": \"minecraft:explosion_decay\"\n" +
-                        "                }\n" +
-                        "              ],\n" +
-                        "              \"name\": \"minecraft:coal\"\n" +
-                        "            }\n" +
-                        "          ]\n" +
-                        "        }\n" +
-                        "      ],\n" +
-                        "      \"rolls\": 1.0\n" +
-                        "    }\n" +
-                        "  ],\n" +
-                        "  \"random_sequence\": \"minecraft:blocks/coal_ore\"\n" +
-                        "}"
             );
         }
 
@@ -301,7 +248,7 @@ public class RegeneratingOres {
                 {
                   "pack": {
                     "description": "Regenerating Ores Resources",
-                    "pack_format": 48
+                    "pack_format": 34
                   }
                 }
                 """;

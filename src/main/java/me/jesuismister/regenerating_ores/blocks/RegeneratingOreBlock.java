@@ -1,9 +1,15 @@
 package me.jesuismister.regenerating_ores.blocks;
 
-import me.jesuismister.regenerating_ores.ServerConfig;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -11,15 +17,27 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
+
+import java.util.List;
 
 public class RegeneratingOreBlock extends Block {
     // Propriété pour indiquer si le bloc est en régénération
     public static final BooleanProperty REGENERATING = BooleanProperty.create("regenerating");
 
     public RegeneratingOreBlock() {
-        super(BlockBehaviour.Properties.ofFullCopy(Blocks.STONE).strength(3.0f, 3.0f));
+        // we explicitly do not require correct tool for drops here since this breaks the custom destroy progress check.
+        // the custom destroy progress check is needed to ensure a regenerating block isn't broken
+        super(BlockBehaviour.Properties.ofFullCopy(Blocks.STONE)
+                .strength(3.0f)
+                .explosionResistance(3.0f)
+        );
         // Définit l'état initial du bloc
-        this.registerDefaultState(this.defaultBlockState().setValue(REGENERATING, false));
+        this.registerDefaultState(this.defaultBlockState()
+                .setValue(REGENERATING, false));
     }
 
     @Override
@@ -55,7 +73,32 @@ public class RegeneratingOreBlock extends Block {
 
     @Override
     public float getDestroyProgress(BlockState state, net.minecraft.world.entity.player.Player player, net.minecraft.world.level.BlockGetter world, BlockPos pos) {
-        // Rend le bloc impossible à miner lorsqu'il est en régénération
-        return state.getValue(REGENERATING) ? 0.0f : super.getDestroyProgress(state, player, world, pos);
+
+        // never break a block while it is regenerating
+        if (state.getValue(REGENERATING)){
+            return 0.0F;
+        }
+
+        // run the default mining logic
+        return super.getDestroyProgress(state, player, world, pos);
+    }
+
+    @Override
+    protected List<ItemStack> getDrops(BlockState state, LootParams.Builder params)
+    {
+        // This avoids the need to define loot tables per block.
+        // We just roll whatever loot table the original block the regenerating black was copied from uses.
+
+        ServerLevel level = params.getLevel();
+        String fullBlockName = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
+        ResourceLocation originalMaterial = ResourceLocation.parse(ModBlocks.blockMap.get(fullBlockName));
+        Block block = BuiltInRegistries.BLOCK.get(originalMaterial);
+        BlockState targetState = block.defaultBlockState();
+        ResourceKey<LootTable> resourcekey = targetState.getBlock().getLootTable();
+        LootTable lootTable = level.getServer().reloadableRegistries().getLootTable(resourcekey);
+
+        // Generate the drops using the provided context parameters
+        // This respects things like fortune and silk touch if they are in the 'params'
+        return lootTable.getRandomItems(params.withParameter(LootContextParams.BLOCK_STATE, targetState).create(LootContextParamSets.BLOCK));
     }
 }
