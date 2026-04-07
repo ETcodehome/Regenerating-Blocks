@@ -37,8 +37,6 @@ public class RegeneratingOres {
     public RegeneratingOres(IEventBus modEventBus, ModContainer modContainer) {
 
         // TODO - process a json config that defines these instead
-
-        // use map to allow for dict lookup by block type Map<String, Regenerable> supportedBlocks = new HashMap<>();
         ModBlocks.supportedBlocks = new ArrayList();
         ModBlocks.supportedBlocks.add(new Regenerable("minecraft", "coal_ore", 10, true, false));
         ModBlocks.supportedBlocks.add(new Regenerable("minecraft", "copper_ore", 20, true, false));
@@ -50,23 +48,18 @@ public class RegeneratingOres {
         ModBlocks.supportedBlocks.add(new Regenerable("minecraft", "redstone_ore", 30, false, true));
         ModBlocks.supportedBlocks.add(new Regenerable("minecraft", "stone", 5, false, false));
 
+        // create a lookup table so we can always tell what original block a regenerable is trying to copy
         ModBlocks.blockMap = new HashMap<String, String>();
-        ModBlocks.blockMap.put("regenerating_ores:regenerating_coal_ore","minecraft:coal_ore");
-        ModBlocks.blockMap.put("regenerating_ores:regenerating_copper_ore","minecraft:copper_ore");
-        ModBlocks.blockMap.put("regenerating_ores:regenerating_iron_ore","minecraft:iron_ore");
-        ModBlocks.blockMap.put("regenerating_ores:regenerating_diamond_ore","minecraft:diamond_ore");
-        ModBlocks.blockMap.put("regenerating_ores:regenerating_emerald_ore","minecraft:emerald_ore");
-        ModBlocks.blockMap.put("regenerating_ores:regenerating_redstone_ore","minecraft:redstone_ore");
-        ModBlocks.blockMap.put("regenerating_ores:regenerating_lapis_ore","minecraft:lapis_ore");
-        ModBlocks.blockMap.put("regenerating_ores:regenerating_gold_ore","minecraft:gold_ore");
-        ModBlocks.blockMap.put("regenerating_ores:regenerating_stone","minecraft:stone");
+        for (Regenerable block : ModBlocks.supportedBlocks) {
+            ModBlocks.blockMap.put(block.GetRegeneratingNameWithNamespace(),block.GetOriginalNameWithNamespace());
+        }
 
         // append virtual resources
         modEventBus.addListener(this::setupDynamicPack);
 
         // ready the deferred blocks
         for (Regenerable block : ModBlocks.supportedBlocks) {
-            block.deferredBlock = ModBlocks.registerBlock("regenerating_" + block.blockName, RegeneratingOreBlock::new);
+            block.deferredBlock = ModBlocks.registerBlock(block.GetRegeneratingBlockName(), RegeneratingOreBlock::new);
         }
 
         // do registration
@@ -80,7 +73,7 @@ public class RegeneratingOres {
 
     private void setupDynamicPack(AddPackFindersEvent event) {
 
-        PackLocationInfo locInfo = new PackLocationInfo("regenerating_ores", Component.literal("Regenerating Ores Resources"), PackSource.BUILT_IN, Optional.empty());
+        PackLocationInfo locInfo = new PackLocationInfo(MOD_ID, Component.literal("Regenerating Ores Resources"), PackSource.BUILT_IN, Optional.empty());
 
         // Explicitly define the ResourcesSupplier to avoid functional interface ambiguity
         Pack.ResourcesSupplier supplier = new Pack.ResourcesSupplier() {
@@ -136,7 +129,7 @@ public class RegeneratingOres {
             addInventoryAesthetic();
 
             for (Regenerable block : ModBlocks.supportedBlocks) {
-                addRegeneratingAesthetic(block.namespace, block.blockName);
+                addRegeneratingAesthetic(block);
             }
 
         }
@@ -144,7 +137,7 @@ public class RegeneratingOres {
         public void addInventoryAesthetic()
         {
             for (Regenerable block : ModBlocks.supportedBlocks) {
-                files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "models/item/regenerating_" + block.blockName + ".json"),
+                files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "models/item/" + block.GetRegeneratingBlockName() + ".json"),
                     "{\n" +
                     " \"parent\": \"" + block.namespace + ":block/" + block.blockName +"\"\n" +
                     "}"
@@ -156,7 +149,7 @@ public class RegeneratingOres {
         {
             String working = "{\n";
             for (Regenerable block : ModBlocks.supportedBlocks) {
-                working += "  \"block.regenerating_ores.regenerating_" + block.blockName + "\": \"Regenerating " + block.GetCleanName() + "\",\n";
+                working += "  \"block.regenerating_ores." + block.GetRegeneratingBlockName() + "\": \"" + block.GetPresentationName() + "\",\n";
             }
             working += "  \"creativetab.regenerating_ores.regenerating_ores_tab_name\": \"Regenerating Ores\"\n}\n";
             files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "lang/en_us.json"), working);
@@ -165,11 +158,9 @@ public class RegeneratingOres {
         public void addPickaxeSpecializations(){
 
             // make picks the tool used for breaking regenerable blocks
-            String proxyTag = """
-                    {"values": [
-                    """;
+            String proxyTag = "{\"values\": [";
             for (Regenerable block : ModBlocks.supportedBlocks) {
-                    proxyTag += "\"regenerating_ores:regenerating_" + block.blockName + "\",";
+                    proxyTag += "\"" + block.GetRegeneratingNameWithNamespace() + "\",";
             }
 
             if (proxyTag.endsWith(",")) {
@@ -186,7 +177,7 @@ public class RegeneratingOres {
                     "  \"values\": [";
             for (Regenerable block : ModBlocks.supportedBlocks) {
                 if (block.needStonePick && !block.needIronPick) {
-                    workingStone += "\"regenerating_ores:regenerating_" + block.blockName + "\",";
+                    workingStone += "\"" + block.GetRegeneratingNameWithNamespace() + "\",";
                 }
             }
 
@@ -203,7 +194,7 @@ public class RegeneratingOres {
                     "  \"values\": [";
             for (Regenerable block : ModBlocks.supportedBlocks) {
                 if (block.needIronPick) {
-                    workingIron += "\"regenerating_ores:regenerating_" + block.blockName + "\",";
+                    workingIron += "\"" + block.GetRegeneratingNameWithNamespace() + "\",";
                 }
             }
 
@@ -215,15 +206,15 @@ public class RegeneratingOres {
             files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "tags/block/needs_iron_tool.json"), workingIron);
         }
 
-        public void addRegeneratingAesthetic(String namespace, String blockName)
+        public void addRegeneratingAesthetic(Regenerable block)
         {
             // determines what the block looks like while regenerating,
             final String REPLACE_BLOCK = "minecraft:block/bedrock";
 
-            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "blockstates/regenerating_" + blockName + ".json"),
+            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "blockstates/" + block.GetRegeneratingBlockName() + ".json"),
                 "{\n" +
                 "  \"variants\": {\n" +
-                "    \"regenerating=false\": { \"model\": \"" + namespace + ":block/" + blockName + "\" },\n" +
+                "    \"regenerating=false\": { \"model\": \"" + block.namespace + ":block/" + block.blockName + "\" },\n" +
                 "    \"regenerating=true\": { \"model\": \"" + REPLACE_BLOCK + "\" }\n" +
                 "  }\n" +
                 "}"
