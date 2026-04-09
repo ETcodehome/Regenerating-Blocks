@@ -93,9 +93,9 @@ public class RegeneratingOreBlock extends Block {
 
     @Override
     public void destroy(LevelAccessor level, BlockPos pos, BlockState state) {
-        super.destroy(level, pos, state);
-
         if (!state.getValue(REGENERATING)) {
+            super.destroy(level, pos, state);
+            
             // Change l'état du bloc en régénération
             level.setBlock(pos, this.defaultBlockState().setValue(REGENERATING, true), 3);
 
