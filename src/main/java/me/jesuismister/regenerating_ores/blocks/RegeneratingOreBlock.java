@@ -71,20 +71,30 @@ public class RegeneratingOreBlock extends Block {
         {
             ServerLevel serverLevel = (ServerLevel) level;
             ItemStack tool = player.getMainHandItem();
+            BlockState sourceState = this.block.sourceBlock.defaultBlockState();
 
-            // 1. Calculate XP using the precise breaker and tool context
-            int xp = this.block.sourceBlock.getExpDrop(
-                    this.block.sourceBlock.defaultBlockState(),
-                    serverLevel,
-                    pos,
-                    level.getBlockEntity(pos),
-                    player,
-                    tool
-            );
+            // Check if the block even requires a tool (some blocks drop items with bare hands)
+            boolean requiresTool = sourceState.requiresCorrectToolForDrops();
 
-            // 2. Spawn the experience if the check passes
-            if (xp > 0) {
-                this.block.sourceBlock.popExperience(serverLevel, pos, xp);
+            // Check if the tool is actually the correct one
+            // This is the NeoForge/Vanilla way to verify the tool's tier and type against the block
+            boolean isCorrectTool = !requiresTool || tool.isCorrectToolForDrops(sourceState);
+            if (isCorrectTool) {
+
+                // Calculate XP using the precise breaker and tool context
+                int xp = this.block.sourceBlock.getExpDrop(
+                        this.block.sourceBlock.defaultBlockState(),
+                        serverLevel,
+                        pos,
+                        level.getBlockEntity(pos),
+                        player,
+                        tool
+                );
+
+                // Spawn the experience if the check passes
+                if (xp > 0) {
+                    this.block.sourceBlock.popExperience(serverLevel, pos, xp);
+                }
             }
         }
 
