@@ -1,48 +1,61 @@
 package me.jesuismister.regenerating_ores.blocks;
 
+import me.jesuismister.regenerating_ores.Regenerable;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.tags.ItemTags;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.storage.loot.LootParams;
-import net.minecraft.world.level.storage.loot.LootTable;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
-
-import java.util.List;
+import net.minecraft.world.level.block.state.properties.Property;
 
 public class RegeneratingOreBlock extends Block {
     // Propriété pour indiquer si le bloc est en régénération
     public static final BooleanProperty REGENERATING = BooleanProperty.create("regenerating");
+    public Regenerable block;
+    // Temporary storage to bridge the gap during the super() call
+    private static StateDefinition<Block, BlockState> capturedSourceDefinition;
 
-    public RegeneratingOreBlock() {
-        // we explicitly do not require correct tool for drops here since this breaks the custom destroy progress check.
-        // the custom destroy progress check is needed to ensure a regenerating block isn't broken
-        super(BlockBehaviour.Properties.ofFullCopy(Blocks.STONE)
-                .strength(3.0f)
-                .explosionResistance(3.0f)
-        );
-        // Définit l'état initial du bloc
-        this.registerDefaultState(this.defaultBlockState()
-                .setValue(REGENERATING, false));
+    public RegeneratingOreBlock(Regenerable block) {
+        super(prepare(block.sourceBlock));
+        this.block = block;
+
+        // Register the default state
+        BlockState defaultState = this.stateDefinition.any().setValue(REGENERATING, false);
+
+        // If the source had properties (like 'lit'), we should mirror its default
+        // This ensures the light emission function doesn't crash on the first tick
+        this.registerDefaultState(defaultState);
+    }
+
+    private static BlockBehaviour.Properties prepare(Block source) {
+        capturedSourceDefinition = source.getStateDefinition();
+        return BlockBehaviour.Properties.ofFullCopy(source).dropsLike(source);
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(REGENERATING); // Ajoute la propriété "regenerating"
+        // 1. Add our custom property
+        builder.add(REGENERATING);
+
+        // 2. Add all properties from the source block we are copying
+        if (capturedSourceDefinition != null) {
+            for (Property<?> property : capturedSourceDefinition.getProperties()) {
+                // Ensure we don't try to add REGENERATING twice if it somehow exists
+                if (!property.getName().equals("regenerating")) {
+                    builder.add(property);
+                }
+            }
+            // Clear the static reference to avoid memory leaks
+            capturedSourceDefinition = null;
+        }
     }
 
     @Override
@@ -52,14 +65,43 @@ public class RegeneratingOreBlock extends Block {
     }
 
     @Override
+    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player)
+    {
+        if (!level.isClientSide && !state.getValue(REGENERATING))
+        {
+            ServerLevel serverLevel = (ServerLevel) level;
+            ItemStack tool = player.getMainHandItem();
+
+            // 1. Calculate XP using the precise breaker and tool context
+            int xp = this.block.sourceBlock.getExpDrop(
+                    this.block.sourceBlock.defaultBlockState(),
+                    serverLevel,
+                    pos,
+                    level.getBlockEntity(pos),
+                    player,
+                    tool
+            );
+
+            // 2. Spawn the experience if the check passes
+            if (xp > 0) {
+                this.block.sourceBlock.popExperience(serverLevel, pos, xp);
+            }
+        }
+
+        return super.playerWillDestroy(level, pos, state, player);
+    }
+
+    @Override
     public void destroy(LevelAccessor level, BlockPos pos, BlockState state) {
+        super.destroy(level, pos, state);
+
         if (!state.getValue(REGENERATING)) {
             // Change l'état du bloc en régénération
             level.setBlock(pos, this.defaultBlockState().setValue(REGENERATING, true), 3);
 
             // Planifie le retour à l'état normal après X secondes
-            // TODO - Fix this back up using block state lookup
-            level.scheduleTick(pos, this, 200);
+            int ticksPerSecond = 20;
+            level.scheduleTick(pos, this, block.regenAfter * ticksPerSecond);
         }
     }
 
@@ -79,26 +121,15 @@ public class RegeneratingOreBlock extends Block {
             return 0.0F;
         }
 
-        // run the default mining logic
-        return super.getDestroyProgress(state, player, world, pos);
+        // Delegate to the source block. That way we respect all the source blocks respective tags.
+        BlockState sourceState = this.block.sourceBlock.defaultBlockState();
+        return sourceState.getDestroyProgress(player, world, pos);
     }
 
     @Override
-    protected List<ItemStack> getDrops(BlockState state, LootParams.Builder params)
-    {
-        // This avoids the need to define loot tables per block.
-        // We just roll whatever loot table the original block the regenerating black was copied from uses.
-
-        ServerLevel level = params.getLevel();
-        String fullBlockName = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
-        ResourceLocation originalMaterial = ResourceLocation.parse(ModBlocks.blockMap.get(fullBlockName));
-        Block block = BuiltInRegistries.BLOCK.get(originalMaterial);
-        BlockState targetState = block.defaultBlockState();
-        ResourceKey<LootTable> resourcekey = targetState.getBlock().getLootTable();
-        LootTable lootTable = level.getServer().reloadableRegistries().getLootTable(resourcekey);
-
-        // Generate the drops using the provided context parameters
-        // This respects things like fortune and silk touch if they are in the 'params'
-        return lootTable.getRandomItems(params.withParameter(LootContextParams.BLOCK_STATE, targetState).create(LootContextParamSets.BLOCK));
+    public boolean canHarvestBlock(BlockState state, BlockGetter world, BlockPos pos, Player player) {
+        // Delegate to the source block's harvesting logic
+        return this.block.sourceBlock.canHarvestBlock(this.block.sourceBlock.defaultBlockState(), world, pos, player);
     }
+
 }

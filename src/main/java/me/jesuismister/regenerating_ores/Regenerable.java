@@ -1,6 +1,16 @@
 package me.jesuismister.regenerating_ores;
 
+import com.google.common.cache.Cache;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.loot.LootTable;
 import net.neoforged.neoforge.registries.DeferredBlock;
+
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
+import net.minecraft.core.LayeredRegistryAccess;
 
 public class Regenerable {
     public String namespace;
@@ -9,12 +19,14 @@ public class Regenerable {
     public boolean needStonePick;
     public boolean needIronPick;
     public DeferredBlock deferredBlock;
-    public Regenerable(String _namespace, String _blockName, int _regenAfter,boolean _needStonePick, boolean _needIronPick){
+    public Block sourceBlock;
+    public Regenerable(String _namespace, String _blockName, int _regenAfter){
         namespace = _namespace; // "minecraft"
         blockName = _blockName; // "gold_ore"
         regenAfter = _regenAfter;
-        needStonePick = _needStonePick;
-        needIronPick = _needIronPick;
+
+        ResourceLocation originalMaterial = ResourceLocation.parse(GetOriginalNameWithNamespace());
+        sourceBlock = BuiltInRegistries.BLOCK.get(originalMaterial);
     }
 
     public String GetPresentationName() // "Regenerating gold ore"
@@ -36,4 +48,11 @@ public class Regenerable {
     {
         return namespace + "_" + blockName;
     }
+
+    public Block GetSourceBlock()
+    {
+        return sourceBlock;
+    }
+
+
 }

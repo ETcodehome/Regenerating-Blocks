@@ -21,7 +21,7 @@ public class ModCreativeModeTabs {
                     .title(Component.translatable("creativetab.regenerating_ores.regenerating_ores_tab_name"))
                     .displayItems(
                         (itemDisplayParameters, output) -> {
-                            ModBlocks.supportedBlocks.forEach(block -> output.accept(block.deferredBlock));
+                            ModBlocks.supportedBlocks.values().forEach(block -> output.accept(block.deferredBlock));
                         }
                     ).build());
 
