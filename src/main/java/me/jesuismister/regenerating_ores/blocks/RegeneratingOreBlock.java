@@ -2,6 +2,7 @@ package me.jesuismister.regenerating_ores.blocks;
 
 import me.jesuismister.regenerating_ores.Regenerable;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.Entity;
@@ -158,6 +159,9 @@ public class RegeneratingOreBlock extends Block {
             System.out.println("DEBUG: Cooldown over. Returning to NORMAL.");
             // Use Flag 3 (Update + Re-render)
             level.setBlock(pos, this.defaultBlockState().setValue(REGENERATING, false), 3);
+
+            // Trigger the restoration effect
+            this.spawnSubtleEffect(level, pos);
         }
     }
 
@@ -296,6 +300,20 @@ public class RegeneratingOreBlock extends Block {
         return super.getDrops(state, params);
     }
 
-    
+    private void spawnSubtleEffect(ServerLevel level, BlockPos pos) {
+        double offset = 0.25;
+        level.sendParticles(ParticleTypes.SCRAPE,
+                pos.getX() -0.2, pos.getY() + 0.5, pos.getZ()+0.5,
+                5, offset, offset, offset, 0.1);
+        level.sendParticles(ParticleTypes.SCRAPE,
+                pos.getX()  +1.2, pos.getY() + 0.5, pos.getZ()+0.5,
+                5, offset, offset, offset, 0.1);
+        level.sendParticles(ParticleTypes.SCRAPE,
+                pos.getX() +0.5, pos.getY() + 0.5, pos.getZ() -0.2,
+                5, offset, offset, offset, 0.1);
+        level.sendParticles(ParticleTypes.SCRAPE,
+                pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() +1.2,
+                5, offset, offset, offset, 0.1);
+    }
 
 }
