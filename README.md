@@ -21,6 +21,7 @@
 - Added targeted support for modded blocks from other namespaces
 - Should support all but the most complicated blocks now, including full tool support (not jsut pickaxes). 
 - Includes drop experience
+- Exploded blocks regenerate
 - Included tag inheritance (inherits all source block tags, can be checked using similar command: /execute if block x y z #minecraft:mineable/pickaxe run say Tag Mirroring Active) This also fixes things like checks for moss being able to spread to those blocks.
 - Blocks inherit all properties from ancestor (ie hardness, explosion resistance, sounds etc)
 - Block drops respect tool state and relevant enchantments.
@@ -38,3 +39,4 @@
 - IDE: IntelliJ & Gradle tab reload top right 
 - Debugging: Run > Debug Client
 - Terminal: .\gradlew clean build
+- Artifacts: "\build\libs\regenerating_ores-x.x.jar"
