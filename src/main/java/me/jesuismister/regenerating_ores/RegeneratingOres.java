@@ -9,7 +9,6 @@ import net.minecraft.server.packs.PackSelectionConfig;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.repository.Pack;
-import net.neoforged.fml.config.ModConfig;
 
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -33,9 +32,9 @@ public class RegeneratingOres {
 
     public RegeneratingOres(IEventBus modEventBus, ModContainer modContainer) {
 
-        // load blocks from config
-        ServerConfig.load();
-        List<Regenerable> blocksFromConfig = ServerConfig.getLoadedConfigs().stream()
+        // load config files
+        ConfigManager.load();
+        List<Regenerable> blocksFromConfig = ConfigManager.getSupportedBlocks().stream()
                 .map(Regenerable::new)
                 .toList();
 
@@ -145,14 +144,14 @@ public class RegeneratingOres {
 
         public void addRegeneratingAesthetic(Regenerable block)
         {
-            // determines what the block looks like while regenerating,
-            final String REPLACE_BLOCK = "minecraft:block/bedrock";
+            // determines what the block looks like while regenerating
+            String visual = ConfigManager.getSettings().getRegeneratingBlockResourcePath();
 
             files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "blockstates/" + block.GetRegeneratingBlockName() + ".json"),
                 "{\n" +
                 "  \"variants\": {\n" +
-                "    \"regenerating=false\": { \"model\": \"" + block.namespace + ":block/" + block.blockName + "\" },\n" +
-                "    \"regenerating=true\": { \"model\": \"" + REPLACE_BLOCK + "\" }\n" +
+                "    \"" + RegeneratingOreBlock.REGENERATING.getName() + "=false\": { \"model\": \"" + block.namespace + ":block/" + block.blockName + "\" },\n" +
+                "    \"" + RegeneratingOreBlock.REGENERATING.getName() + "=true\": { \"model\": \"" + visual + "\" }\n" +
                 "  }\n" +
                 "}"
             );

@@ -15,7 +15,7 @@ public class Regenerable {
     // Use a Memoized Supplier: it runs once and caches the result
     private final Supplier<Block> sourceBlockSupplier;
 
-    public Regenerable(RegenerableConfig config){
+    public Regenerable(ConfigBlocks config){
         this.namespace = config.namespace(); // "minecraft"
         this.blockName = config.blockName(); // "gold_ore"
         this.regenAfter = config.regenAfter();
@@ -37,7 +37,7 @@ public class Regenerable {
 
     public String GetPresentationName() // "Regenerating gold ore"
     {
-        return "Regenerating " + blockName.replace("_", " ");
+        return GetSourceBlock().getName().getString();
     }
 
     public String GetOriginalNameWithNamespace() // "minecraft:gold_ore"
