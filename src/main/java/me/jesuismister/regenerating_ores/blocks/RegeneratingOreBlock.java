@@ -236,12 +236,16 @@ public class RegeneratingOreBlock extends Block {
         }
 
         if (!level.isClientSide) {
-            log("Block broken by " + (playerBroke ? "player" : "non-player") + ". Replacing with regenerating version.");
+            log("Block broken by " + (playerBroke ? "player" : "non-player") + ".");
 
-            level.getServer().execute(() -> {
-                if (level.getBlockState(pos).isAir()) {
-                    // We create the new state, ensuring REGENERATING is true
-                    // and resetting DESTROYEDBYPLAYER for the next cycle.
+            // Handles almost all conversions, moss, sculk spread, burning to ash etc
+            boolean isAir = newState.isAir();
+            boolean stateSwap = newState.is(state.getBlock());
+            if (isAir || stateSwap){
+
+                log("Block broken (expected path). Setting back to a regenerating block.");
+                level.getServer().execute(() -> {
+
                     BlockState restored = state
                             .setValue(REGENERATING, true)
                             .setValue(DESTROYEDBYPLAYER, false);
@@ -249,11 +253,23 @@ public class RegeneratingOreBlock extends Block {
                     super.onRemove(state, level, pos, newState, isMoving);
                     level.levelEvent(2001, pos, Block.getId(state));
                     level.setBlock(pos, restored, 3);
-                }
-            });
+                });
+                return;
+            }
+
+            boolean disableTransitions = ConfigManager.getSettings().disableTransitions();
+            if (disableTransitions && !isAir) {
+                log("Obeyed config setting. Prevented block transitioning to " + newState.getBlock().getName().toString());
+                level.getServer().execute(() -> {
+                    level.levelEvent(2001, pos, Block.getId(state));
+                    level.setBlock(pos, state, 3);
+                });
+                return;
+            }
+
         }
 
-        // Otherwise, default handling
+        log("(Probably bug) No intentional handling path defined, using default.");
         super.onRemove(state, level, pos, newState, isMoving);
     }
 

@@ -8,20 +8,23 @@ import net.minecraft.world.level.block.Block;
 public record ConfigSettings(
         boolean showParticles,
         boolean disablePushing,
+        boolean disableTransitions,
         boolean verboseLogging,
         String regeneratingVisual
 ) {
     public static final Codec<ConfigSettings> CODEC = RecordCodecBuilder.create(inst -> inst.group(
         Codec.BOOL.fieldOf("show_particles").forGetter(ConfigSettings::showParticles),
         Codec.BOOL.fieldOf("disable_pushing").forGetter(ConfigSettings::disablePushing),
+        Codec.BOOL.fieldOf("disable_transitions").forGetter(ConfigSettings::disableTransitions),
         Codec.BOOL.fieldOf("verbose_logging").forGetter(ConfigSettings::verboseLogging),
         Codec.STRING.fieldOf("regenerating_visual").forGetter(ConfigSettings::regeneratingVisual)
     ).apply(inst, ConfigSettings::new));
 
     public static final ConfigSettings DEFAULT = new ConfigSettings(
         true,
-        false,
         true,
+        true,
+        false,
         "minecraft:bedrock"
     );
 
