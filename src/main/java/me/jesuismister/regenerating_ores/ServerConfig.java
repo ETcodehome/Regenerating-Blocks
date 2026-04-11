@@ -1,55 +1,73 @@
 package me.jesuismister.regenerating_ores;
 
-import net.neoforged.neoforge.common.ModConfigSpec;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.mojang.serialization.JsonOps;
+import net.neoforged.fml.loading.FMLPaths;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
 
 public class ServerConfig {
-    public static final ModConfigSpec CONFIG_SPEC;
-    public static final ModConfigSpec.ConfigValue<Integer> COAL;
-    public static final ModConfigSpec.ConfigValue<Integer> COPPER;
-    public static final ModConfigSpec.ConfigValue<Integer> DIAMOND;
-    public static final ModConfigSpec.ConfigValue<Integer> EMERALD;
-    public static final ModConfigSpec.ConfigValue<Integer> GOLD;
-    public static final ModConfigSpec.ConfigValue<Integer> IRON;
-    public static final ModConfigSpec.ConfigValue<Integer> LAPIS;
-    public static final ModConfigSpec.ConfigValue<Integer> REDSTONE;
+    // Stores the file in /config/regenerating_ores.json
+    private static final Path CONFIG_FILE = FMLPaths.CONFIGDIR.get().resolve("regenerating_ores.json");
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-    static {
-        final ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
+    // We hold the loaded list here for easy access across the mod
+    private static List<RegenerableConfig> loadedConfigs = List.of();
 
-        builder.comment("Configuration for Regenerating Ores").push("general");
+    public static void load() {
+        if (!Files.exists(CONFIG_FILE)) {
+            System.out.println("No config found, generating defaults...");
+            loadedConfigs = createDefaultConfig();
+            return;
+        }
 
-        COAL = builder
-                .comment("Time in seconds before coal regenerate.")
-                .defineInRange("coalDelay", 10, 1, 3600);
-        COPPER = builder
-                .comment("Time in seconds before copper regenerate.")
-                .defineInRange("copperDelay", 20, 1, 3600);
-        DIAMOND = builder
-                .comment("Time in seconds before diamond regenerate.")
-                .defineInRange("diamondDelay", 300, 1, 3600);
-        EMERALD = builder
-                .comment("Time in seconds before emerald regenerate.")
-                .defineInRange("emeraldDelay", 60, 1, 3600);
-        GOLD = builder
-                .comment("Time in seconds before gold regenerate.")
-                .defineInRange("goldDelay", 30, 1, 3600);
-        IRON = builder
-                .comment("Time in seconds before iron regenerate.")
-                .defineInRange("ironDelay", 20, 1, 3600);
-        LAPIS = builder
-                .comment("Time in seconds before lapis regenerate.")
-                .defineInRange("lapisDelay", 30, 1, 3600);
-        REDSTONE = builder
-                .comment("Time in seconds before redstone regenerate.")
-                .defineInRange("redstoneDelay", 30, 1, 3600);
+        try (var reader = Files.newBufferedReader(CONFIG_FILE)) {
+            JsonElement json = GSON.fromJson(reader, JsonElement.class);
 
-        builder.pop();
-        CONFIG_SPEC = builder.build();
+            // The Codec does the heavy lifting: translating JSON to Records
+            loadedConfigs = RegenerableConfig.CODEC.listOf().parse(JsonOps.INSTANCE, json)
+                    .getOrThrow(error -> new RuntimeException("Configuration Error: " + error));
+
+            System.out.println("Successfully loaded " + loadedConfigs.size() + " regenerable blocks.");
+        } catch (Exception e) {
+            System.err.println("Failed to load config, using defaults. Error: " + e.getMessage());
+            loadedConfigs = createDefaultConfig();
+        }
     }
 
-    public static int getRegenerationDelay(String oreType) {
-        // TODO - improve
-        return 10;
+    private static List<RegenerableConfig> createDefaultConfig() {
+        List<RegenerableConfig> defaults = List.of(
+                new RegenerableConfig("minecraft", "copper_ore", 20),
+                new RegenerableConfig("minecraft", "diamond_ore", 300),
+                new RegenerableConfig("minecraft", "emerald_ore", 60),
+                new RegenerableConfig("minecraft", "gold_ore", 30),
+                new RegenerableConfig("minecraft", "iron_ore", 20),
+                new RegenerableConfig("minecraft", "lapis_ore", 30),
+                new RegenerableConfig("minecraft", "redstone_ore", 30),
+                new RegenerableConfig("minecraft", "stone", 5),
+                new RegenerableConfig("minecraft", "obsidian", 5)
+        );
+        save(defaults);
+        return defaults;
     }
 
+    public static void save(List<RegenerableConfig> data) {
+        try {
+            // Encode the Records back into JSON format
+            JsonElement json = RegenerableConfig.CODEC.listOf().encodeStart(JsonOps.INSTANCE, data)
+                    .getOrThrow(error -> new RuntimeException("Save Error: " + error));
+
+            Files.writeString(CONFIG_FILE, GSON.toJson(json));
+        } catch (Exception e) {
+            System.err.println("Could not save config: " + e.getMessage());
+        }
+    }
+
+    public static List<RegenerableConfig> getLoadedConfigs() {
+        return loadedConfigs;
+    }
 }

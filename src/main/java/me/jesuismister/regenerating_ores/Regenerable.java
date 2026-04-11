@@ -1,32 +1,38 @@
 package me.jesuismister.regenerating_ores;
-
-import com.google.common.cache.Cache;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.block.Blocks;
 import net.neoforged.neoforge.registries.DeferredBlock;
 
-import net.neoforged.neoforge.server.ServerLifecycleHooks;
-import net.minecraft.core.LayeredRegistryAccess;
-
 public class Regenerable {
-    public String namespace;
-    public String blockName;
-    public int regenAfter;
-    public boolean needStonePick;
-    public boolean needIronPick;
-    public DeferredBlock deferredBlock;
-    public Block sourceBlock;
-    public Regenerable(String _namespace, String _blockName, int _regenAfter){
-        namespace = _namespace; // "minecraft"
-        blockName = _blockName; // "gold_ore"
-        regenAfter = _regenAfter;
+    public final String namespace;
+    public final String blockName;
+    public final int regenAfter;
+    public DeferredBlock<?> deferredBlock;
+    // Use a Memoized Supplier: it runs once and caches the result
+    private final Supplier<Block> sourceBlockSupplier;
 
-        ResourceLocation originalMaterial = ResourceLocation.parse(GetOriginalNameWithNamespace());
-        sourceBlock = BuiltInRegistries.BLOCK.get(originalMaterial);
+    public Regenerable(RegenerableConfig config){
+        this.namespace = config.namespace(); // "minecraft"
+        this.blockName = config.blockName(); // "gold_ore"
+        this.regenAfter = config.regenAfter();
+
+        // We use a supplier because we can't guarantee mod load order.
+        // We need to avoid our mod trying to build ores from a later loaded mod.
+        // This ensures we wait until runtime to map.
+        this.sourceBlockSupplier = Suppliers.memoize(() -> {
+            ResourceLocation originalMaterial = ResourceLocation.fromNamespaceAndPath(namespace, blockName);
+            Block found = BuiltInRegistries.BLOCK.get(originalMaterial);
+
+            if (found == Blocks.AIR) {
+                // Log a warning if the block is missing when actually accessed
+                System.err.println("RegenOres: Could not find source block " + originalMaterial);
+            }
+            return found;
+        });
     }
 
     public String GetPresentationName() // "Regenerating gold ore"
@@ -49,10 +55,7 @@ public class Regenerable {
         return namespace + "_" + blockName;
     }
 
-    public Block GetSourceBlock()
-    {
-        return sourceBlock;
+    public Block GetSourceBlock() {
+        return sourceBlockSupplier.get();
     }
-
-
 }

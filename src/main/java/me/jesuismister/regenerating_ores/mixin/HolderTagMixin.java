@@ -19,7 +19,7 @@ public abstract class HolderTagMixin<T> {
     @Inject(method = "is(Lnet/minecraft/tags/TagKey;)Z", at = @At("HEAD"), cancellable = true)
     private void mirrorTags(TagKey<T> tag, CallbackInfoReturnable<Boolean> cir) {
         if (this.value() instanceof RegeneratingOreBlock regenBlock) {
-            if (regenBlock.block.sourceBlock.builtInRegistryHolder().is((TagKey<Block>) tag)) {
+            if (regenBlock.block.GetSourceBlock().builtInRegistryHolder().is((TagKey<Block>) tag)) {
                 cir.setReturnValue(true);
             }
         }

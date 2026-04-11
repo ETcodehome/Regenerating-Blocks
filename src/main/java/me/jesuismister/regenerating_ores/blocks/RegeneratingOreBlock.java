@@ -33,7 +33,7 @@ public class RegeneratingOreBlock extends Block {
     private static StateDefinition<Block, BlockState> capturedSourceDefinition;
 
     public RegeneratingOreBlock(Regenerable block) {
-        super(prepare(block.sourceBlock));
+        super(prepare(block.GetSourceBlock()));
         this.block = block;
 
         // Register the default state
@@ -93,7 +93,7 @@ public class RegeneratingOreBlock extends Block {
 
             ServerLevel serverLevel = (ServerLevel) level;
             ItemStack tool = player.getMainHandItem();
-            BlockState sourceState = this.block.sourceBlock.defaultBlockState();
+            BlockState sourceState = this.block.GetSourceBlock().defaultBlockState();
 
             // Check if the block even requires a tool (some blocks drop items with bare hands)
             boolean requiresTool = sourceState.requiresCorrectToolForDrops();
@@ -104,8 +104,8 @@ public class RegeneratingOreBlock extends Block {
             if (isCorrectTool) {
 
                 // Calculate XP using the precise breaker and tool context
-                int xp = this.block.sourceBlock.getExpDrop(
-                        this.block.sourceBlock.defaultBlockState(),
+                int xp = this.block.GetSourceBlock().getExpDrop(
+                        this.block.GetSourceBlock().defaultBlockState(),
                         serverLevel,
                         pos,
                         level.getBlockEntity(pos),
@@ -115,7 +115,7 @@ public class RegeneratingOreBlock extends Block {
 
                 // Spawn the experience if the check passes
                 if (xp > 0) {
-                    this.block.sourceBlock.popExperience(serverLevel, pos, xp);
+                    this.block.GetSourceBlock().popExperience(serverLevel, pos, xp);
                 }
             }
         }
@@ -190,7 +190,7 @@ public class RegeneratingOreBlock extends Block {
         }
 
         // Delegate to the source block. That way we respect all the source blocks respective tags.
-        return this.block.sourceBlock.defaultBlockState().getDestroyProgress(player, world, pos);
+        return this.block.GetSourceBlock().defaultBlockState().getDestroyProgress(player, world, pos);
     }
 
     @Override
@@ -285,7 +285,7 @@ public class RegeneratingOreBlock extends Block {
         }
 
         // Delegate to the source block's harvesting logic
-        return this.block.sourceBlock.canHarvestBlock(this.block.sourceBlock.defaultBlockState(), world, pos, player);
+        return this.block.GetSourceBlock().canHarvestBlock(this.block.GetSourceBlock().defaultBlockState(), world, pos, player);
     }
 
     @Override

@@ -9,9 +9,6 @@ import net.minecraft.server.packs.PackSelectionConfig;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.repository.Pack;
-import net.minecraft.world.flag.FeatureFlagSet;
-import net.minecraft.world.flag.FeatureFlags;
-import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.config.ModConfig;
 
 import net.neoforged.bus.api.IEventBus;
@@ -36,21 +33,15 @@ public class RegeneratingOres {
 
     public RegeneratingOres(IEventBus modEventBus, ModContainer modContainer) {
 
-        List<Regenerable> addTheseBlocksFromConfig = List.of(
-            new Regenerable("minecraft", "copper_ore", 20),
-            new Regenerable("minecraft", "diamond_ore", 300),
-            new Regenerable("minecraft", "emerald_ore", 60),
-            new Regenerable("minecraft", "gold_ore", 30),
-            new Regenerable("minecraft", "iron_ore", 20),
-            new Regenerable("minecraft", "lapis_ore", 30),
-            new Regenerable("minecraft", "redstone_ore", 30),
-            new Regenerable("minecraft", "stone", 5),
-            new Regenerable("minecraft", "obsidian", 5)
-        );
+        // load blocks from config
+        ServerConfig.load();
+        List<Regenerable> blocksFromConfig = ServerConfig.getLoadedConfigs().stream()
+                .map(Regenerable::new)
+                .toList();
 
         // Populate a lookup table so we can get all configuration data from blockstates
         ModBlocks.supportedBlocks = new HashMap<String, Regenerable>();
-        for (Regenerable block : addTheseBlocksFromConfig )
+        for (Regenerable block : blocksFromConfig )
         {
             ModBlocks.supportedBlocks.put(block.GetRegeneratingNameWithNamespace(), block);
         }
@@ -67,9 +58,6 @@ public class RegeneratingOres {
         ModBlocks.register(modEventBus);
         ModCreativeModeTabs.register(modEventBus);
         ModItems.register(modEventBus);
-
-        // load config stuff
-        modContainer.registerConfig(ModConfig.Type.SERVER, ServerConfig.CONFIG_SPEC);
     }
 
     private void setupDynamicPack(AddPackFindersEvent event) {
