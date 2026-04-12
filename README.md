@@ -19,9 +19,10 @@
 - Moved entire system to a dynamic resource pack which is runtime generated for ease of extension and compatibility. 
 - Straightforward configuration. Add the block names to regenerating_ores.json config and get a regenerating block version.
 - Support for modded blocks from other namespaces.
+- Regenerating blocks visually repair themselves after being mined.
 - Regenerating blocks respect tool properties and enchantments (supports all tools, not just pickaxes). 
 - Regenerating blocks match source block drop experience.
-- Regenerating blocks are explosion immune.
+- Regenerating blocks are not destroyed by explosions.
 - Regenerating blocks can be broken by creative game mode players allowing removal.
 - Regenerating blocks inherits all source block tags. 
   Can be checked using similar command: 
@@ -30,13 +31,11 @@
 - Regenerating blocks inherit all properties from ancestor (ie hardness, explosion resistance, sounds etc)
 - Best efforts have been made to ensure that source block state is respected and compatible.
 - Regenerating blocks sparkle when they regenerate (with config toggle)
-- Block type while blocks regenerate is customisable (from config string)
 
 # Caveats
 - Implementations that directly check/compare against a block (ie Block = Blocks.STONE) will not resolve since the regenerating block is a distinct block.
 - The above can be fixed by proper use of tags and demonstrates why they should be preferred for compatibility instead of direct comparisons like this. 
 - Prefer loading this late in a mod order if possible. I haven't had bad times due to load order in my personal usage so this can be ignored for most users. Probably.
-- Making regenerating blocks from significantly complex blocks that already have many property states (128+) can lead to performance degradation, world bloat and instability (native limitation).
 
 # Bugs
 - Much more likely to be addressed if you raise an issue.

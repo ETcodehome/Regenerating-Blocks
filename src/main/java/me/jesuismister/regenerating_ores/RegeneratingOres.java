@@ -19,6 +19,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.AbstractPackResources;
 import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.server.packs.resources.IoSupplier;
+import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.AddPackFindersEvent;
 
 import java.io.ByteArrayInputStream;
@@ -31,6 +32,12 @@ public class RegeneratingOres {
     public static final String MOD_ID = "regenerating_ores";
 
     public RegeneratingOres(IEventBus modEventBus, ModContainer modContainer) {
+
+        // do registration
+        ModBlocks.register(modEventBus);
+        ModCreativeModeTabs.register(modEventBus);
+        ModItems.register(modEventBus);
+
 
         // load config files
         ConfigManager.load();
@@ -50,13 +57,11 @@ public class RegeneratingOres {
 
         // ready the deferred blocks
         for (Regenerable block : ModBlocks.supportedBlocks.values()) {
-            block.deferredBlock = ModBlocks.registerBlock(block.GetRegeneratingBlockName(), () -> new RegeneratingOreBlock(block));
+            block.deferredBlock = ModBlocks.registerBlock(block.GetRegeneratingBlockName(), () -> new RegeneratingOreBlock(block, block.regenAfter));
         }
+        NeoForge.EVENT_BUS.register(new BlockBreakHandler());
 
-        // do registration
-        ModBlocks.register(modEventBus);
-        ModCreativeModeTabs.register(modEventBus);
-        ModItems.register(modEventBus);
+
     }
 
     private void setupDynamicPack(AddPackFindersEvent event) {
@@ -145,15 +150,14 @@ public class RegeneratingOres {
         public void addRegeneratingAesthetic(Regenerable block)
         {
             // determines what the block looks like while regenerating
-            String visual = ConfigManager.getSettings().getRegeneratingBlockResourcePath();
+            String modelLocation = block.namespace + ":block/" + block.blockName;
 
             files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "blockstates/" + block.GetRegeneratingBlockName() + ".json"),
-                "{\n" +
-                "  \"variants\": {\n" +
-                "    \"" + RegeneratingOreBlock.REGENERATING.getName() + "=false\": { \"model\": \"" + block.namespace + ":block/" + block.blockName + "\" },\n" +
-                "    \"" + RegeneratingOreBlock.REGENERATING.getName() + "=true\": { \"model\": \"" + visual + "\" }\n" +
-                "  }\n" +
-                "}"
+                    "{\n" +
+                    "  \"variants\": {\n" +
+                    "    \"\": { \"model\": \"" + modelLocation + "\" }\n" +
+                    "  }\n" +
+                    "}"
             );
         }
 

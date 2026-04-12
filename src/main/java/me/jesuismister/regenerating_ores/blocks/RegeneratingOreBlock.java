@@ -1,80 +1,48 @@
 package me.jesuismister.regenerating_ores.blocks;
 
 import me.jesuismister.regenerating_ores.ConfigManager;
+import me.jesuismister.regenerating_ores.RegenManager;
 import me.jesuismister.regenerating_ores.Regenerable;
 import me.jesuismister.regenerating_ores.RegeneratingOres;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.*;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
+import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 
 public class RegeneratingOreBlock extends Block {
-    public static final BooleanProperty REGENERATING = BooleanProperty.create(RegeneratingOres.MOD_ID + "_regenerating");
-    public static final BooleanProperty DESTROYEDBYPLAYER = BooleanProperty.create(RegeneratingOres.MOD_ID + "_destroyedbyplayer");
+
     public Regenerable block;
-    private static StateDefinition<Block, BlockState> sourceStateDefinition;
+    public int regenTicks;
 
-
-    public RegeneratingOreBlock(Regenerable block) {
+    public RegeneratingOreBlock(Regenerable block, int regenAfter) {
         super(prepare(block.GetSourceBlock()));
         this.block = block;
-
-        // Register the default state
-        BlockState defaultState = this.stateDefinition.any().setValue(REGENERATING, false).setValue(DESTROYEDBYPLAYER, false);
-
-        // If the source had properties (like 'lit'), we should mirror its default
-        // This ensures the light emission function doesn't crash on the first tick
-        this.registerDefaultState(defaultState);
+        this.regenTicks = regenAfter * 20;
+        this.registerDefaultState(this.stateDefinition.any());
     }
 
     private static BlockBehaviour.Properties prepare(Block source) {
-        sourceStateDefinition = source.getStateDefinition();
-        return BlockBehaviour.Properties.ofFullCopy(source).dropsLike(source);
-    }
-
-    @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-
-        // Custom properties the new block type has
-        builder.add(REGENERATING);
-        builder.add(DESTROYEDBYPLAYER);
-
-        // Add all properties from the source block we are copying
-        if (sourceStateDefinition != null) {
-
-            for (Property<?> prop : sourceStateDefinition.getProperties()) {
-                // Ensure we don't try to add REGENERATING twice if it somehow exists
-                if (!prop.getName().equals(REGENERATING.getName())) {
-                    builder.add(prop);
-                }
-            }
-
-            // Clear the static reference to avoid memory leaks
-            sourceStateDefinition = null;
-        }
-    }
-
-    @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState().setValue(REGENERATING, false);
+        return BlockBehaviour.Properties.ofFullCopy(source)
+                .dropsLike(source)
+                .lightLevel(state -> 0);
     }
 
     // Called when a player successfully finishes breaking a block, but before the block is actually replaced with air.
@@ -82,17 +50,21 @@ public class RegeneratingOreBlock extends Block {
     public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player)
     {
 
+        boolean regenerating = RegenManager.isRegenerating(pos);
         boolean canDestroyRegeneratingBlock = player.isCreative();
-        if (canDestroyRegeneratingBlock && state.getValue(REGENERATING)){
+        if (canDestroyRegeneratingBlock && regenerating){
             log("Allowed destruction of regenerating block because player is in creative gamemode.");
-            level.setBlock(pos, state.setValue(DESTROYEDBYPLAYER, true), 3 | 16);
+            RegenManager.getData(pos).creativeBreak = true;
             return super.playerWillDestroy(level, pos, state, player);
         }
 
-        if (!level.isClientSide && !state.getValue(REGENERATING))
+        if (!level.isClientSide && !regenerating)
         {
             log("Allowed destruction of fully regenerated block");
-            level.setBlock(pos, state.setValue(DESTROYEDBYPLAYER, true), 3 | 16);
+            level.setBlock(pos, state, 3 | 16);
+            int uniqueBreakerId = pos.hashCode() + 5000;
+            level.destroyBlockProgress(uniqueBreakerId, pos, 9);
+            RegenManager.cacheBreakData(level, pos, true);
 
             ServerLevel serverLevel = (ServerLevel) level;
             ItemStack tool = player.getMainHandItem();
@@ -109,7 +81,7 @@ public class RegeneratingOreBlock extends Block {
 
                 // Calculate XP using the precise breaker and tool context
                 int xp = this.block.GetSourceBlock().getExpDrop(
-                        this.block.GetSourceBlock().defaultBlockState(),
+                        state,
                         serverLevel,
                         pos,
                         level.getBlockEntity(pos),
@@ -118,9 +90,11 @@ public class RegeneratingOreBlock extends Block {
                 );
 
                 // Spawn the experience if the check passes
-                if (xp > 0) {
-                    this.block.GetSourceBlock().popExperience(serverLevel, pos, xp);
+                boolean usingSilk = tool.getEnchantmentLevel(level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.SILK_TOUCH)) > 0;
+                if (xp > 0 && !usingSilk) {
+                    this.popExperience(serverLevel, pos, xp);
                 }
+
             }
         }
 
@@ -128,29 +102,68 @@ public class RegeneratingOreBlock extends Block {
     }
 
     @Override
-    public boolean canDropFromExplosion(BlockState state, BlockGetter level, BlockPos pos, Explosion explosion)
-    {
-
-        if (state.getValue(REGENERATING)){
-            log("Denied block drops from explosion because block is regenerating.");
-            return false;
-        }
-
-        return super.canDropFromExplosion(state, level, pos, explosion);
-    }
-
-    @Override
     public void tick(BlockState state, ServerLevel level, BlockPos pos, net.minecraft.util.RandomSource random) {
+        int uniqueBreakerId = pos.hashCode() + 5000;
+        RegenManager.RegenData breakData = RegenManager.getData(pos);
 
-        // we tick first as it is state tied
-        super.tick(state, level, pos, random);
-
-        if (state.getValue(REGENERATING)) {
-            log("Regen cooldown ended. Returning to regenerating=false state.");
-            level.setBlock(pos, this.defaultBlockState().setValue(REGENERATING, false), 3);
-            this.spawnSubtleEffect(level, pos);
+        // 1. Ghost/Reboot Check
+        if (breakData == null) {
+            log("No data found (reboot or out-of-sync). Healing instantly.");
+            level.destroyBlockProgress(uniqueBreakerId, pos, -1);
+            // We assume the block is already in the 'Regenerating' state visuals;
+            // logic to flip the boolean back if necessary goes here.
+            return;
         }
 
+        // 2. Time-Delta Calculation
+        // Assuming 'regenTicks' is the total duration (e.g., 100 ticks for 5 seconds)
+        long elapsed = level.getGameTime() - breakData.startTime;
+        log("Elapsed: " + elapsed);
+        long totalDuration = (long) this.regenTicks;
+
+        if (elapsed >= totalDuration) {
+            // 3. Completion Logic
+            log("Regen cycle complete.");
+            level.destroyBlockProgress(uniqueBreakerId, pos, -1);
+            RegenManager.clearDataAt(pos); // Using your implementation name
+
+            // Final state flip - Ensure visuals reset
+            this.spawnSubtleEffect(level, pos);
+            return;
+        }
+
+        float progress = (float) elapsed / (float) totalDuration;
+        int currentVisualStage = 9 - (int) (progress * 10);
+
+        // 5. Update and Reschedule
+        if (currentVisualStage != breakData.lastVisualStage) {
+            breakData.lastVisualStage = currentVisualStage;
+
+            level.getServer().execute(() -> {
+                level.levelEvent(2005, pos, 0);
+            });
+        }
+
+        // Calculate how many ticks from the START should stage 'nextStage' trigger
+        // Since we are counting down 9 -> 0, stage 8 triggers at 10% progress, stage 7 at 20%, etc.
+        float nextProgressThreshold = (float) (10 - currentVisualStage) / 10.0f;
+        long ticksUntilNextStage = (long) (nextProgressThreshold * totalDuration) - elapsed;
+
+        // Safety Clamp: Always tick at least once every 1 second,
+        // but no sooner than 1 tick from now.
+        long nextTickDelay = Math.max(1, Math.min(20, ticksUntilNextStage));
+
+        // Schedule the next check.
+        // 5-10 ticks is a good balance between visual smoothness and CPU overhead.
+        level.getServer().execute(()-> {
+            level.destroyBlockProgress(uniqueBreakerId, pos, currentVisualStage);
+            log("Regen cycle wasn't completed. "
+                    + "elapsed " + elapsed
+                    + "/ total " + totalDuration
+                    + " stage: " + currentVisualStage
+            );
+            level.scheduleTick(pos, this, (int) nextTickDelay);
+        });
     }
 
     @Override
@@ -168,7 +181,7 @@ public class RegeneratingOreBlock extends Block {
     @Override
     public float getExplosionResistance(BlockState state, BlockGetter level, BlockPos pos, Explosion explosion) {
 
-        if (state.getValue(REGENERATING)){
+        if (RegenManager.isRegenerating(pos)){
             log("Provided bedrock values because block should be unbreakable");
             return 3600000.0F;
         }
@@ -181,7 +194,7 @@ public class RegeneratingOreBlock extends Block {
     public float getDestroyProgress(BlockState state, net.minecraft.world.entity.player.Player player, net.minecraft.world.level.BlockGetter world, BlockPos pos) {
 
         // never break a block while it is regenerating
-        if (state.getValue(REGENERATING)){
+        if (RegenManager.isRegenerating(pos)){
             log("Progress 0.0 because block is regenerating");
             return 0.0F;
         }
@@ -194,7 +207,7 @@ public class RegeneratingOreBlock extends Block {
     public boolean canEntityDestroy(BlockState state, BlockGetter level, BlockPos pos, net.minecraft.world.entity.Entity entity) {
 
         // If it's regenerating, no entity (including contraptions) can destroy it.
-        if (state.getValue(REGENERATING)) {
+        if (RegenManager.isRegenerating(pos)){
             log("Destruction prevented because block is regenerating)");
             return false;
         }
@@ -218,65 +231,84 @@ public class RegeneratingOreBlock extends Block {
             return;
         }
 
-        boolean playerBroke = state.getValue(DESTROYEDBYPLAYER);
-        boolean blockRegenerating = state.getValue(REGENERATING);
+        boolean regenerating = RegenManager.isRegenerating(pos);
 
-        if (playerBroke && blockRegenerating)
-        {
-            log("Block broken by player in creative. Allowed permanent destruction.");
-            super.onRemove(state, level, pos, newState, isMoving);
-            return;
-        }
+        if (regenerating){
+            RegenManager.RegenData breakData = RegenManager.getData(pos);
 
-        if (!playerBroke && blockRegenerating){
-            log("Block broken by non-player while regenerating. Preventing destruction.");
-            super.onRemove(state, level, pos, newState, isMoving);
-            level.setBlock(pos, state, 19);
-            return;
-        }
-
-        if (!level.isClientSide) {
-            log("Block broken by " + (playerBroke ? "player" : "non-player") + ".");
-
-            // Handles almost all conversions, moss, sculk spread, burning to ash etc
-            boolean isAir = newState.isAir();
-            boolean stateSwap = newState.is(state.getBlock());
-            if (isAir || stateSwap){
-
-                log("Block broken (expected path). Setting back to a regenerating block.");
-                level.getServer().execute(() -> {
-
-                    BlockState restored = state
-                            .setValue(REGENERATING, true)
-                            .setValue(DESTROYEDBYPLAYER, false);
-
-                    super.onRemove(state, level, pos, newState, isMoving);
-                    level.levelEvent(2001, pos, Block.getId(state));
-                    level.setBlock(pos, restored, 3);
-                });
-                return;
-            }
-
-            boolean disableTransitions = ConfigManager.getSettings().disableTransitions();
-            if (disableTransitions && !isAir) {
-                log("Obeyed config setting. Prevented block transitioning to " + newState.getBlock().getName().toString());
-                level.getServer().execute(() -> {
-                    level.levelEvent(2001, pos, Block.getId(state));
-                    level.setBlock(pos, state, 3);
-                });
+            if (breakData.creativeBreak) {
+                log("Block broken by player in creative. Allowed permanent destruction.");
+                RegenManager.clearDataAt(pos);
+                int uniqueBreakerId = pos.hashCode() + 5000;
+                level.destroyBlockProgress(uniqueBreakerId, pos, -1);
+                super.onRemove(state, level, pos, newState, isMoving);
                 return;
             }
 
         }
 
-        log("(Probably bug) No intentional handling path defined, using default.");
-        super.onRemove(state, level, pos, newState, isMoving);
+        boolean isAir = newState.isAir();
+        boolean stateSwap = newState.is(state.getBlock());
+        if ((isAir || stateSwap) && !regenerating){
+            log("Block broken by non-player. Setting back to a regenerating block.");
+            //super.onRemove(state, level, pos, newState, isMoving);
+            makeRegenerating(level, pos, state);
+            return;
+        }
+
+        // Handles almost all conversions, moss, sculk spread, burning to ash etc
+        boolean disableTransitions = ConfigManager.getSettings().disableTransitions();
+        if (disableTransitions && !isAir) {
+            log("Obeyed config setting. Prevented block transitioning to " + newState.getBlock().getName().toString());
+            resetBlockToState(level, pos, state);
+            return;
+        }
+
+        if (!isAir && !disableTransitions) {
+            log("Obeyed config setting. Allowed block to transition to " + newState.getBlock().getName().toString());
+            // allow the transition
+            return;
+        }
+
+        // Probably a direct removal (typically by contraption or machine)
+        // We prevent the block being removed from the world by reinstating the state
+        log("Prevented permanent block destruction by restoring to previous state");
+        resetBlockToState(level, pos, state);
     }
+
+    @Override
+    public List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
+
+        log("Drops table consulted");
+
+        Vec3 origin = params.getOptionalParameter(LootContextParams.ORIGIN);
+        if (origin == null) {
+            log("Checking a drop table without a position. Drops nothing always.");
+            return Collections.emptyList();
+        }
+
+        BlockPos pos = BlockPos.containing(origin);
+        boolean regenerating = RegenManager.isRegenerating(pos);
+        if (regenerating) {
+
+            if (RegenManager.getData(pos).playerBreak){
+                log("Returned default drops from player break");
+                return super.getDrops(state, params);
+            }
+
+            log("Prevented drops from non-player break (block regenerating)");
+            return Collections.emptyList();
+        }
+
+        log("returned default drops");
+        return super.getDrops(state, params);
+    }
+
 
     @Override
     public SoundType getSoundType(BlockState state, LevelReader level, BlockPos pos, @Nullable Entity entity) {
 
-        if (state.getValue(REGENERATING)) {
+        if (RegenManager.isRegenerating(pos)) {
             return new SoundType(0.0f, 1.0f,
                     SoundEvents.EMPTY, // Break sound
                     SoundEvents.EMPTY, // Step sound
@@ -293,48 +325,13 @@ public class RegeneratingOreBlock extends Block {
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
 
-        if (!level.isClientSide && state.getValue(REGENERATING)) {
-            log("Regenerating block placed. Scheduling regeneration tick.");
-            level.scheduleTick(pos, this, block.regenAfter * 20);
+        if (!level.isClientSide && RegenManager.isRegenerating(pos)) {
+            log("Scheduling regeneration tick.");
+            level.scheduleTick(pos, this, 20);
         }
 
         // Otherwise, default handling
         super.onPlace(state, level, pos, oldState, isMoving);
-    }
-
-    @Override
-    public boolean canHarvestBlock(BlockState state, BlockGetter world, BlockPos pos, Player player) {
-
-        if (state.getValue(REGENERATING)) {
-            log("Harvest prevented because block is currently regenerating.");
-            return false;
-        }
-
-        // Otherwise, delegate to actual source block harvesting behavior
-        return this.block.GetSourceBlock().canHarvestBlock(this.block.GetSourceBlock().defaultBlockState(), world, pos, player);
-    }
-
-    @Override
-    public List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
-
-        if (state.getValue(REGENERATING)) {
-            log("Drops prevented because blocks currently regenerating drop nothing if somehow broken.");
-            return Collections.emptyList();
-        }
-
-        // Otherwise, default handling
-        return super.getDrops(state, params);
-    }
-
-    @Override
-    public int getLightEmission(BlockState state, BlockGetter level, BlockPos pos) {
-
-        if (state.getValue(REGENERATING)) {
-            return ConfigManager.getSettings().getRegeneratingBlockLightEmission();
-        }
-
-        // Otherwise, default handling
-        return super.getLightEmission(state, level, pos);
     }
 
     private void spawnSubtleEffect(ServerLevel level, BlockPos pos) {
@@ -357,7 +354,41 @@ public class RegeneratingOreBlock extends Block {
                 5, offset, offset, offset, 0.1);
     }
 
-    private void log(String s){
+    public void resetBlockToState(ServerLevel level, BlockPos pos, BlockState state) {
+
+        // shows a block break effect to show the set occurred
+        // level.levelEvent(2001, pos, Block.getId(state));
+
+        // flag 19 prevents neighbour updates and a bunch of other funniness
+        // including break noise suppression
+        level.getServer().execute(() -> {
+            level.setBlock(pos, state, 19);
+        });
+    }
+    public void resetBlockToState(Level level, BlockPos pos, BlockState state){
+        if (level instanceof ServerLevel serverLevel) {
+            resetBlockToState(serverLevel, pos, state);
+        }
+    }
+
+    public void makeRegenerating(ServerLevel level, BlockPos pos, BlockState state) {
+
+        // shows a block break effect to show the set occurred
+        level.levelEvent(2001, pos, Block.getId(state));
+
+        RegenManager.cacheBreakData(level, pos, false);
+
+        level.getServer().execute(() -> {
+            level.setBlock(pos, state, 3);
+        });
+    }
+    public void makeRegenerating(Level level, BlockPos pos, BlockState state){
+        if (level instanceof ServerLevel serverLevel) {
+            makeRegenerating(serverLevel, pos, state);
+        }
+    }
+
+    public static void log(String s){
         if (!ConfigManager.getSettings().verboseLogging()){ return; }
 
         String callerName = StackWalker.getInstance()
