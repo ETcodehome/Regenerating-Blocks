@@ -1,6 +1,7 @@
 package me.jesuismister.regenerating_ores.blocks;
 
 import me.jesuismister.regenerating_ores.Regenerable;
+import me.jesuismister.regenerating_ores.RegeneratingBlockItem;
 import me.jesuismister.regenerating_ores.items.ModItems;
 import me.jesuismister.regenerating_ores.RegeneratingOres;
 import net.minecraft.world.item.Item;
@@ -26,8 +27,8 @@ public class ModBlocks {
     }
 
     private static <T extends Block> void registerBlockItem(String name, DeferredBlock<T> block) {
-        // registerSimpleBlockItem handles the supplier and binding logic safely for you
-        ModItems.ITEMS.registerSimpleBlockItem(block, new Item.Properties().rarity(Rarity.EPIC));
+        ModItems.ITEMS.register(name, () -> new RegeneratingBlockItem(block.get(),
+                new Item.Properties().rarity(Rarity.EPIC)));
     }
 
     public static void register(IEventBus eventBus) {

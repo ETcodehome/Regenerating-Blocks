@@ -3,10 +3,11 @@ package me.jesuismister.regenerating_ores.blocks;
 import me.jesuismister.regenerating_ores.ConfigManager;
 import me.jesuismister.regenerating_ores.RegenManager;
 import me.jesuismister.regenerating_ores.Regenerable;
-import me.jesuismister.regenerating_ores.RegeneratingOres;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.Entity;
@@ -354,11 +355,13 @@ public class RegeneratingOreBlock extends Block {
                 5, offset, offset, offset, 0.1);
     }
 
+    @Override
+    public MutableComponent getName() {
+        return Component.translatable("text.regenerating_ores.format",
+                Component.translatable(this.block.GetSourceBlock().getDescriptionId()));
+    }
+
     public void resetBlockToState(ServerLevel level, BlockPos pos, BlockState state) {
-
-        // shows a block break effect to show the set occurred
-        // level.levelEvent(2001, pos, Block.getId(state));
-
         // flag 19 prevents neighbour updates and a bunch of other funniness
         // including break noise suppression
         level.getServer().execute(() -> {

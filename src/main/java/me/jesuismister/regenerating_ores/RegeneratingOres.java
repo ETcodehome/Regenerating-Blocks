@@ -140,9 +140,7 @@ public class RegeneratingOres {
         public void addLanguageSupport()
         {
             String working = "{\n";
-            for (Regenerable block : ModBlocks.supportedBlocks.values()) {
-                working += "  \"block.regenerating_ores." + block.GetRegeneratingBlockName() + "\": \"" + block.GetPresentationName() + "\",\n";
-            }
+            working += "  \"text.regenerating_ores.format\": \"Regenerating %s\",\n";
             working += "  \"creativetab.regenerating_ores.regenerating_ores_tab_name\": \"Regenerating Ores\"\n}\n";
             files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "lang/en_us.json"), working);
         }
