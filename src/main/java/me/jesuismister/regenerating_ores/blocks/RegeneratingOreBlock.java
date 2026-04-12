@@ -23,6 +23,7 @@ import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.core.Direction;
 
 import javax.annotation.Nullable;
 import java.util.Collections;
@@ -376,7 +377,7 @@ public class RegeneratingOreBlock extends Block {
             makeRegenerating(serverLevel, pos, state);
         }
     }
-    
+
     @Override
     public void stepOn(Level level, BlockPos pos, BlockState state, Entity entity) {
         // 1. Perform a fast check to see if the source block is one that reacts to stepping
