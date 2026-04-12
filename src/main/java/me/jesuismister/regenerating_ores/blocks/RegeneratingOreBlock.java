@@ -376,6 +376,28 @@ public class RegeneratingOreBlock extends Block {
             makeRegenerating(serverLevel, pos, state);
         }
     }
+    
+    @Override
+    public void stepOn(Level level, BlockPos pos, BlockState state, Entity entity) {
+        // 1. Perform a fast check to see if the source block is one that reacts to stepping
+        // (Redstone Ore, Magma Blocks, Sculk, etc.)
+        Block source = this.block.GetSourceBlock();
+        source.stepOn(level, pos, source.defaultBlockState(), entity);
+        //super.stepOn(level, pos, source.defaultBlockState(), entity);
+    }
+
+    @Override
+    public boolean isSignalSource(BlockState state) {
+        return this.block.GetSourceBlock().defaultBlockState().isSignalSource();
+    }
+
+    // 2. Pass through the signal strength
+    @Override
+    public int getSignal(BlockState state, BlockGetter level, BlockPos pos, Direction direction) {
+        // We check the source's default state for power output
+        return this.block.GetSourceBlock().defaultBlockState().getSignal(level, pos, direction);
+    }
+
 
     public static void log(String s){
         if (!ConfigManager.getSettings().verboseLogging()){ return; }
