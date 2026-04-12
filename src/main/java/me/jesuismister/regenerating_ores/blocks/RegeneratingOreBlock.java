@@ -107,61 +107,47 @@ public class RegeneratingOreBlock extends Block {
         int uniqueBreakerId = pos.hashCode() + 5000;
         RegenManager.RegenData breakData = RegenManager.getData(pos);
 
-        // 1. Ghost/Reboot Check
         if (breakData == null) {
             log("No data found (reboot or out-of-sync). Healing instantly.");
             level.destroyBlockProgress(uniqueBreakerId, pos, -1);
-            // We assume the block is already in the 'Regenerating' state visuals;
-            // logic to flip the boolean back if necessary goes here.
             return;
         }
 
-        // 2. Time-Delta Calculation
-        // Assuming 'regenTicks' is the total duration (e.g., 100 ticks for 5 seconds)
         long elapsed = level.getGameTime() - breakData.startTime;
-        log("Elapsed: " + elapsed);
         long totalDuration = (long) this.regenTicks;
 
         if (elapsed >= totalDuration) {
-            // 3. Completion Logic
             log("Regen cycle complete.");
             level.destroyBlockProgress(uniqueBreakerId, pos, -1);
-            RegenManager.clearDataAt(pos); // Using your implementation name
-
-            // Final state flip - Ensure visuals reset
+            RegenManager.clearDataAt(pos);
             this.spawnSubtleEffect(level, pos);
             return;
         }
 
         float progress = (float) elapsed / (float) totalDuration;
         int currentVisualStage = 9 - (int) (progress * 10);
-
-        // 5. Update and Reschedule
         if (currentVisualStage != breakData.lastVisualStage) {
             breakData.lastVisualStage = currentVisualStage;
-
             level.getServer().execute(() -> {
                 level.levelEvent(2005, pos, 0);
             });
         }
 
-        // Calculate how many ticks from the START should stage 'nextStage' trigger
         // Since we are counting down 9 -> 0, stage 8 triggers at 10% progress, stage 7 at 20%, etc.
         float nextProgressThreshold = (float) (10 - currentVisualStage) / 10.0f;
         long ticksUntilNextStage = (long) (nextProgressThreshold * totalDuration) - elapsed;
 
-        // Safety Clamp: Always tick at least once every 1 second,
-        // but no sooner than 1 tick from now.
-        long nextTickDelay = Math.max(1, Math.min(20, ticksUntilNextStage));
+        int maxTimeWithoutUpdateInTicks = 380; // cracks disappear after 400 ticks
+        int minimumTickStep = 1;
+        long nextTickDelay = Math.max(minimumTickStep, Math.min(maxTimeWithoutUpdateInTicks, ticksUntilNextStage));
 
-        // Schedule the next check.
-        // 5-10 ticks is a good balance between visual smoothness and CPU overhead.
         level.getServer().execute(()-> {
             level.destroyBlockProgress(uniqueBreakerId, pos, currentVisualStage);
-            log("Regen cycle wasn't completed. "
-                    + "elapsed " + elapsed
-                    + "/ total " + totalDuration
-                    + " stage: " + currentVisualStage
+            log("Regen cycle wasn't completed."
+                    + " | Elapsed: " + elapsed
+                    + " | Total: " + totalDuration
+                    + " | Stage: " + currentVisualStage
+                    + " | TickDelay: " + nextTickDelay
             );
             level.scheduleTick(pos, this, (int) nextTickDelay);
         });
