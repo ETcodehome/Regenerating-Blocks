@@ -35,16 +35,6 @@ public class Regenerable {
         });
     }
 
-    public String GetPresentationName() // "Regenerating gold ore"
-    {
-        return GetSourceBlock().getName().getString();
-    }
-
-    public String GetOriginalNameWithNamespace() // "minecraft:gold_ore"
-    {
-        return namespace +":"+ blockName;
-    }
-
     public String GetRegeneratingNameWithNamespace() // "regenerating_ores:minecraft_gold_ore"
     {
         return RegeneratingOres.MOD_ID +":"+ GetRegeneratingBlockName();

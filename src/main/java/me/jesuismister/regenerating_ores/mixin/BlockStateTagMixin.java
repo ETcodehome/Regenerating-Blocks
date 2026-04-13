@@ -18,10 +18,6 @@ public abstract class BlockStateTagMixin {
     @Shadow
     public abstract Block getBlock();
 
-    /**
-     * @author psiber
-     * @reason Mirrors all tags from source block to its regenerating copy for improved compatibility.
-     */
     @Inject(method = "is(Lnet/minecraft/tags/TagKey;)Z", at = @At("HEAD"), cancellable = true)
     private void mirrorSourceTags(TagKey<Block> tag, CallbackInfoReturnable<Boolean> cir) {
         Block block = this.getBlock();
