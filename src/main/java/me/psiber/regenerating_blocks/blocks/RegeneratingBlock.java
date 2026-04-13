@@ -258,7 +258,7 @@ public class RegeneratingBlock extends Block {
             return;
         }
 
-        // Probably a direct removal (typically by contraption or machine)
+        // Probably a direct removal
         // We prevent the block being removed from the world by reinstating the state
         log("Prevented permanent block destruction by restoring to previous state");
         resetBlockToState(level, pos, state);
@@ -315,7 +315,7 @@ public class RegeneratingBlock extends Block {
 
         if (!level.isClientSide && RegenManager.isRegenerating(pos)) {
             log("Scheduling regeneration tick.");
-            level.scheduleTick(pos, this, 20);
+            level.scheduleTick(pos, this, 1);
         }
 
         // Otherwise, default handling
@@ -349,10 +349,11 @@ public class RegeneratingBlock extends Block {
     }
 
     public void resetBlockToState(ServerLevel level, BlockPos pos, BlockState state) {
-        // flag 19 prevents neighbour updates and a bunch of other funniness
-        // including break noise suppression
+
+        level.levelEvent(2001, pos, Block.getId(state));
+
         level.getServer().execute(() -> {
-            level.setBlock(pos, state, 19);
+            level.setBlock(pos, state, 3);
         });
     }
     public void resetBlockToState(Level level, BlockPos pos, BlockState state){
@@ -380,11 +381,8 @@ public class RegeneratingBlock extends Block {
 
     @Override
     public void stepOn(Level level, BlockPos pos, BlockState state, Entity entity) {
-        // 1. Perform a fast check to see if the source block is one that reacts to stepping
-        // (Redstone Ore, Magma Blocks, Sculk, etc.)
         Block source = this.block.GetSourceBlock();
         source.stepOn(level, pos, source.defaultBlockState(), entity);
-        //super.stepOn(level, pos, source.defaultBlockState(), entity);
     }
 
     @Override
@@ -392,7 +390,6 @@ public class RegeneratingBlock extends Block {
         return this.block.GetSourceBlock().defaultBlockState().isSignalSource();
     }
 
-    // 2. Pass through the signal strength
     @Override
     public int getSignal(BlockState state, BlockGetter level, BlockPos pos, Direction direction) {
         // We check the source's default state for power output
