@@ -1,3 +1,5 @@
+![Regenerating Blocks title banner](banner.png)
+
 # Regenerating Blocks
 - Originally from https://gitlab.com/Quentin3010/regenerating-ores by JeSuisMister
 - Continued under the permissive MIT license as per the original repo.
