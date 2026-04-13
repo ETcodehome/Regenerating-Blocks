@@ -1,6 +1,6 @@
-package me.psiber.regenerating_ores.mixin;
+package me.psiber.regenerating_blocks.mixin;
 
-import me.psiber.regenerating_ores.blocks.RegeneratingOreBlock;
+import me.psiber.regenerating_blocks.blocks.RegeneratingBlock;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -23,8 +23,8 @@ public abstract class BlockStateTagMixin {
         Block block = this.getBlock();
 
         // Check if this block is our custom type
-        if (RegeneratingOreBlock.class.isInstance(block)) {
-            RegeneratingOreBlock regenBlock = (RegeneratingOreBlock) block;
+        if (RegeneratingBlock.class.isInstance(block)) {
+            RegeneratingBlock regenBlock = (RegeneratingBlock) block;
             // Check if the source block has the tag.
             if (regenBlock.block.GetSourceBlock().builtInRegistryHolder().is(tag)) {
                 cir.setReturnValue(true);

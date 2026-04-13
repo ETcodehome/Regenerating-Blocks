@@ -1,8 +1,8 @@
-package me.psiber.regenerating_ores.blocks;
+package me.psiber.regenerating_blocks.blocks;
 
-import me.psiber.regenerating_ores.ConfigManager;
-import me.psiber.regenerating_ores.RegenManager;
-import me.psiber.regenerating_ores.Regenerable;
+import me.psiber.regenerating_blocks.ConfigManager;
+import me.psiber.regenerating_blocks.RegenManager;
+import me.psiber.regenerating_blocks.Regenerable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
@@ -29,12 +29,12 @@ import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 
-public class RegeneratingOreBlock extends Block {
+public class RegeneratingBlock extends Block {
 
     public Regenerable block;
     public int regenTicks;
 
-    public RegeneratingOreBlock(Regenerable block, int regenAfter) {
+    public RegeneratingBlock(Regenerable block, int regenAfter) {
         super(prepare(block.GetSourceBlock()));
         this.block = block;
         this.regenTicks = regenAfter * 20;
@@ -344,7 +344,7 @@ public class RegeneratingOreBlock extends Block {
 
     @Override
     public MutableComponent getName() {
-        return Component.translatable("text.regenerating_ores.format",
+        return Component.translatable("text.regenerating_blocks.format",
                 Component.translatable(this.block.GetSourceBlock().getDescriptionId()));
     }
 

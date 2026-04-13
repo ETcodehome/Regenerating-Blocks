@@ -1,9 +1,9 @@
-package me.psiber.regenerating_ores.blocks;
+package me.psiber.regenerating_blocks.blocks;
 
-import me.psiber.regenerating_ores.Regenerable;
-import me.psiber.regenerating_ores.RegeneratingBlockItem;
-import me.psiber.regenerating_ores.items.ModItems;
-import me.psiber.regenerating_ores.RegeneratingOres;
+import me.psiber.regenerating_blocks.RegeneratingBlocks;
+import me.psiber.regenerating_blocks.Regenerable;
+import me.psiber.regenerating_blocks.RegeneratingBlockItem;
+import me.psiber.regenerating_blocks.items.ModItems;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.block.Block;
@@ -18,7 +18,7 @@ public class ModBlocks {
 
     public static HashMap<String, Regenerable> supportedBlocks;
 
-    public static final DeferredRegister<Block> BLOCKS = DeferredRegister.createBlocks(RegeneratingOres.MOD_ID);
+    public static final DeferredRegister<Block> BLOCKS = DeferredRegister.createBlocks(RegeneratingBlocks.MOD_ID);
 
     public static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<T> block) {
         DeferredBlock<T> toReturn = (DeferredBlock<T>) BLOCKS.register(name, block);

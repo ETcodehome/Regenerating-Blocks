@@ -1,4 +1,4 @@
-package me.psiber.regenerating_ores;
+package me.psiber.regenerating_blocks;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -11,8 +11,8 @@ import java.nio.file.Path;
 import java.util.List;
 
 public class ConfigManager {
-    private static final Path BLOCKS_FILE = FMLPaths.CONFIGDIR.get().resolve("regenerating_ores.json");
-    private static final Path SETTINGS_FILE = FMLPaths.CONFIGDIR.get().resolve("regenerating_ores_settings.json");
+    private static final Path BLOCKS_FILE = FMLPaths.CONFIGDIR.get().resolve("regenerating_blocks.json");
+    private static final Path SETTINGS_FILE = FMLPaths.CONFIGDIR.get().resolve("regenerating_blocks_settings.json");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static List<ConfigBlocks> blocks = ConfigBlocks.DEFAULT;
     private static ConfigSettings settings = ConfigSettings.DEFAULT;
@@ -51,7 +51,7 @@ public class ConfigManager {
             var json = GSON.fromJson(reader, com.google.gson.JsonElement.class);
             settings = ConfigSettings.CODEC.parse(JsonOps.INSTANCE, json)
                     .getOrThrow(s -> new RuntimeException("Settings Error: " + s));
-            System.out.println("Successfully loaded Regenerating Ores config settings.");
+            System.out.println("Successfully loaded Regenerating Blocks config settings.");
         } catch (Exception e) {
             System.err.println("Failed to load settings, using defaults.");
         }

@@ -1,6 +1,6 @@
-package me.psiber.regenerating_ores;
+package me.psiber.regenerating_blocks;
 
-import me.psiber.regenerating_ores.blocks.RegeneratingOreBlock;
+import me.psiber.regenerating_blocks.blocks.RegeneratingBlock;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
@@ -15,7 +15,7 @@ public class RegeneratingBlockItem extends BlockItem {
     public Component getName(ItemStack stack) {
         // This is the "Late Binding" logic.
         // It pulls the pattern from YOUR lang file and the ore name from the SOURCE mod.
-        return Component.translatable("text.regenerating_ores.format",
-                Component.translatable(((RegeneratingOreBlock)this.getBlock()).block.GetSourceBlock().getDescriptionId()));
+        return Component.translatable("text.regenerating_blocks.format",
+                Component.translatable(((RegeneratingBlock)this.getBlock()).block.GetSourceBlock().getDescriptionId()));
     }
 }

@@ -1,4 +1,4 @@
-package me.psiber.regenerating_ores;
+package me.psiber.regenerating_blocks;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.packs.PackLocationInfo;
@@ -15,7 +15,7 @@ public class PackFinderHandler {
 
     public static void register(AddPackFindersEvent event) {
 
-        PackLocationInfo locInfo = new PackLocationInfo(RegeneratingOres.MOD_ID, Component.literal("Regenerating Ores Resources"), PackSource.BUILT_IN, Optional.empty());
+        PackLocationInfo locInfo = new PackLocationInfo(RegeneratingBlocks.MOD_ID, Component.literal("Regenerating Ores Resources"), PackSource.BUILT_IN, Optional.empty());
 
         // Explicitly define the ResourcesSupplier to avoid functional interface ambiguity
         Pack.ResourcesSupplier supplier = new Pack.ResourcesSupplier() {

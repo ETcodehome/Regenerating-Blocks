@@ -1,8 +1,18 @@
-package me.psiber.regenerating_ores;
+package me.psiber.regenerating_blocks;
 
+import me.psiber.regenerating_blocks.blocks.ModBlocks;
+import me.psiber.regenerating_blocks.blocks.RegeneratingBlock;
+import me.psiber.regenerating_blocks.items.ModCreativeModeTabs;
+import me.psiber.regenerating_blocks.items.ModItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.common.NeoForge;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 

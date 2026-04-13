@@ -1,6 +1,6 @@
-package me.psiber.regenerating_ores;
+package me.psiber.regenerating_blocks;
 
-import me.psiber.regenerating_ores.blocks.RegeneratingOreBlock;
+import me.psiber.regenerating_blocks.blocks.RegeneratingBlock;
 import net.minecraft.core.BlockPos;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -13,22 +13,22 @@ public class BlockBreakHandler {
     public void onBlockBreak(BlockEvent.BreakEvent event) {
 
         // performance guard - always do nothing if it is not a regenerating block.
-        if (!(event.getState().getBlock() instanceof RegeneratingOreBlock)) {
+        if (!(event.getState().getBlock() instanceof RegeneratingBlock)) {
             return;
         }
 
-        RegeneratingOreBlock.log("A block break event is being processed");
+        RegeneratingBlock.log("A block break event is being processed");
         BlockPos pos = event.getPos();
 
         boolean regenerating = RegenManager.isRegenerating(pos);
         if (regenerating) {
 
             if (RegenManager.getData(pos).creativeBreak == true) {
-                RegeneratingOreBlock.log("Allowed creative break of block");
+                RegeneratingBlock.log("Allowed creative break of block");
                 return;
             }
 
-            RegeneratingOreBlock.log("Prevented break because block is regenerating.");
+            RegeneratingBlock.log("Prevented break because block is regenerating.");
             event.setCanceled(true);
             return;
         }

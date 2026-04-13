@@ -1,22 +1,22 @@
-package me.psiber.regenerating_ores;
+package me.psiber.regenerating_blocks;
 
-import me.psiber.regenerating_ores.blocks.ModBlocks;
-import me.psiber.regenerating_ores.blocks.RegeneratingOreBlock;
-import me.psiber.regenerating_ores.items.ModCreativeModeTabs;
-import me.psiber.regenerating_ores.items.ModItems;
+import me.psiber.regenerating_blocks.blocks.ModBlocks;
+import me.psiber.regenerating_blocks.blocks.RegeneratingBlock;
+import me.psiber.regenerating_blocks.items.ModCreativeModeTabs;
+import me.psiber.regenerating_blocks.items.ModItems;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
+
 import java.util.HashMap;
 import java.util.List;
 
+@Mod(RegeneratingBlocks.MOD_ID)
+public class RegeneratingBlocks {
+    public static final String MOD_ID = "regenerating_blocks";
 
-@Mod(RegeneratingOres.MOD_ID)
-public class RegeneratingOres {
-    public static final String MOD_ID = "regenerating_ores";
-
-    public RegeneratingOres(IEventBus modEventBus, ModContainer modContainer) {
+    public RegeneratingBlocks(IEventBus modEventBus, ModContainer modContainer) {
 
         // do registration
         ModBlocks.register(modEventBus);
@@ -41,7 +41,7 @@ public class RegeneratingOres {
 
         // ready the deferred blocks
         for (Regenerable block : ModBlocks.supportedBlocks.values()) {
-            block.deferredBlock = ModBlocks.registerBlock(block.GetRegeneratingBlockName(), () -> new RegeneratingOreBlock(block, block.regenAfter));
+            block.deferredBlock = ModBlocks.registerBlock(block.GetRegeneratingBlockName(), () -> new RegeneratingBlock(block, block.regenAfter));
         }
         NeoForge.EVENT_BUS.register(new BlockBreakHandler());
 

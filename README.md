@@ -1,5 +1,5 @@
-# Regenerating Ores
-- Originally from https://gitlab.com/Quentin3010/regenerating-ores
+# Regenerating Blocks
+- Originally from https://gitlab.com/Quentin3010/regenerating-ores by JeSuisMister
 - Continued under the permissive MIT license as per the original repo.
 
 # Behavior
@@ -7,7 +7,7 @@
 - Clean and mod friendly / compatible implementation.
 
 # Motivations
-- Updated primarily for personal usage similar to the original developer. If you imagine ores behaving a bit like they do in runescape, this plugin does that.
+- Updated primarily for personal usage similar to the original developer. Regenerating blocks don't get destroyed when broken, instead recovering back to their original state.
 - I wanted to use it with ReliableReplacer so that players inhabit worlds properly rather than just flattening everything and behaving like a plague of locusts on otherwise pristine landscapes. 
 - I think having a reason to visit the same area over and over encourages people to "settle in" and improve an area. 
 - Not being able to mine most "hard" blocks should encourage building on the land and traverse caves etc, not just digging direct paths (encouraging organic development more like the real world).
@@ -17,7 +17,7 @@
 # Major modifications from ancestor repository
 - Imported onto GitHub as preferred source management arrangement.
 - Moved entire system to a dynamic resource pack which is runtime generated for ease of extension and compatibility. 
-- Straightforward configuration. Add the block names to regenerating_ores.json config and get a regenerating block version.
+- Straightforward configuration. Add the block names to regenerating_blocks.json config and get a regenerating block version.
 - Support for modded blocks from other namespaces.
 - Regenerating blocks visually repair themselves after being mined.
 - Regenerating blocks respect tool properties and enchantments (supports all tools, not just pickaxes). 
@@ -40,8 +40,15 @@
 # Bugs
 - Much more likely to be addressed if you raise an issue.
 
+# Performance Notes
+- I don't like slow code. This has been implemented in a performance sensitive manner.
+- Repairing of broken blocks is done using natively implemented scheduled ticks.
+- Underlying break data tables don't get walked, always use fast direct key lookups.
+- Break status is stored in memory, resets if server is shutdown.
+- State is failure safe, resets to ready to be harvested state ensuring blocks don't get locked regenerating.
+
 # Dev notes
 - IDE: IntelliJ & Gradle tab reload top right 
 - Debugging: Run > Debug Client
 - Terminal: .\gradlew clean build
-- Artifacts: "\build\libs\regenerating_ores-x.x.jar"
+- Artifacts: "\build\libs\regenerating_blocks-x.x.jar"

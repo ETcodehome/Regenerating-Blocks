@@ -1,6 +1,7 @@
-package me.psiber.regenerating_ores;
+package me.psiber.regenerating_blocks;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
+import me.psiber.regenerating_blocks.blocks.RegeneratingBlock;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
@@ -21,7 +22,7 @@ public class Regenerable {
         this.regenAfter = config.regenAfter();
 
         // We use a supplier because we can't guarantee mod load order.
-        // We need to avoid our mod trying to build ores from a later loaded mod.
+        // We need to avoid our mod trying to build blocks from a later loaded mod.
         // This ensures we wait until runtime to map.
         this.sourceBlockSupplier = Suppliers.memoize(() -> {
             ResourceLocation originalMaterial = ResourceLocation.fromNamespaceAndPath(namespace, blockName);
@@ -29,15 +30,15 @@ public class Regenerable {
 
             if (found == Blocks.AIR) {
                 // Log a warning if the block is missing when actually accessed
-                System.err.println("RegenOres: Could not find source block " + originalMaterial);
+                RegeneratingBlock.log("Could not find source block " + originalMaterial);
             }
             return found;
         });
     }
 
-    public String GetRegeneratingNameWithNamespace() // "regenerating_ores:minecraft_gold_ore"
+    public String GetRegeneratingNameWithNamespace() // "regenerating_blocks:minecraft_gold_ore"
     {
-        return RegeneratingOres.MOD_ID +":"+ GetRegeneratingBlockName();
+        return RegeneratingBlocks.MOD_ID +":"+ GetRegeneratingBlockName();
     }
 
     public String GetRegeneratingBlockName() // "minecraft_gold_ore"
