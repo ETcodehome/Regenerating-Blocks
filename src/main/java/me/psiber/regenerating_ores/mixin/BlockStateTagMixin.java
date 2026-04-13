@@ -1,6 +1,6 @@
-package me.jesuismister.regenerating_ores.mixin;
+package me.psiber.regenerating_ores.mixin;
 
-import me.jesuismister.regenerating_ores.blocks.RegeneratingOreBlock;
+import me.psiber.regenerating_ores.blocks.RegeneratingOreBlock;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;

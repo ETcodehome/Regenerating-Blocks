@@ -1,7 +1,7 @@
-package me.jesuismister.regenerating_ores.items;
+package me.psiber.regenerating_ores.items;
 
-import me.jesuismister.regenerating_ores.RegeneratingOres;
-import me.jesuismister.regenerating_ores.blocks.ModBlocks;
+import me.psiber.regenerating_ores.RegeneratingOres;
+import me.psiber.regenerating_ores.blocks.ModBlocks;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;

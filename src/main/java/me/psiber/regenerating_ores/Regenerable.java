@@ -1,4 +1,4 @@
-package me.jesuismister.regenerating_ores;
+package me.psiber.regenerating_ores;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import net.minecraft.core.registries.BuiltInRegistries;

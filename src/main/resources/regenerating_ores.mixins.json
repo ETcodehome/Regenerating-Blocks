@@ -1,7 +1,7 @@
 {
   "required": true,
   "minVersion": "0.8",
-  "package": "me.jesuismister.regenerating_ores.mixin",
+  "package": "me.psiber.regenerating_ores.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "BlockStateTagMixin",

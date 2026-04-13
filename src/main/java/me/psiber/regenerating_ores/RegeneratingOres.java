@@ -1,9 +1,9 @@
-package me.jesuismister.regenerating_ores;
+package me.psiber.regenerating_ores;
 
-import me.jesuismister.regenerating_ores.blocks.ModBlocks;
-import me.jesuismister.regenerating_ores.blocks.RegeneratingOreBlock;
-import me.jesuismister.regenerating_ores.items.ModCreativeModeTabs;
-import me.jesuismister.regenerating_ores.items.ModItems;
+import me.psiber.regenerating_ores.blocks.ModBlocks;
+import me.psiber.regenerating_ores.blocks.RegeneratingOreBlock;
+import me.psiber.regenerating_ores.items.ModCreativeModeTabs;
+import me.psiber.regenerating_ores.items.ModItems;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;

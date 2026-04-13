@@ -1,9 +1,9 @@
-package me.jesuismister.regenerating_ores.blocks;
+package me.psiber.regenerating_ores.blocks;
 
-import me.jesuismister.regenerating_ores.Regenerable;
-import me.jesuismister.regenerating_ores.RegeneratingBlockItem;
-import me.jesuismister.regenerating_ores.items.ModItems;
-import me.jesuismister.regenerating_ores.RegeneratingOres;
+import me.psiber.regenerating_ores.Regenerable;
+import me.psiber.regenerating_ores.RegeneratingBlockItem;
+import me.psiber.regenerating_ores.items.ModItems;
+import me.psiber.regenerating_ores.RegeneratingOres;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.block.Block;

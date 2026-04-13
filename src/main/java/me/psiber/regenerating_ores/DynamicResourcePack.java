@@ -1,6 +1,6 @@
-package me.jesuismister.regenerating_ores;
+package me.psiber.regenerating_ores;
 
-import me.jesuismister.regenerating_ores.blocks.ModBlocks;
+import me.psiber.regenerating_ores.blocks.ModBlocks;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.AbstractPackResources;
 import net.minecraft.server.packs.PackLocationInfo;
@@ -13,8 +13,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-
-import static me.jesuismister.regenerating_ores.RegeneratingOres.MOD_ID;
 
 
 public class DynamicResourcePack extends AbstractPackResources {
@@ -35,7 +33,7 @@ public class DynamicResourcePack extends AbstractPackResources {
     public void addInventoryAesthetic()
     {
         for (Regenerable block : ModBlocks.supportedBlocks.values()) {
-            files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "models/item/" + block.GetRegeneratingBlockName() + ".json"),
+            files.put(ResourceLocation.fromNamespaceAndPath(RegeneratingOres.MOD_ID, "models/item/" + block.GetRegeneratingBlockName() + ".json"),
                     "{\n" +
                     " \"parent\": \"" + block.namespace + ":block/" + block.blockName +"\"\n" +
                     "}"
@@ -48,7 +46,7 @@ public class DynamicResourcePack extends AbstractPackResources {
         String working = "{\n";
         working += "  \"text.regenerating_ores.format\": \"Regenerating %s\",\n";
         working += "  \"creativetab.regenerating_ores.regenerating_ores_tab_name\": \"Regenerating Ores\"\n}\n";
-        files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "lang/en_us.json"), working);
+        files.put(ResourceLocation.fromNamespaceAndPath(RegeneratingOres.MOD_ID, "lang/en_us.json"), working);
     }
 
     public void addRegeneratingAesthetic(Regenerable block)
@@ -56,7 +54,7 @@ public class DynamicResourcePack extends AbstractPackResources {
         // determines what the block looks like while regenerating
         String modelLocation = block.namespace + ":block/" + block.blockName;
 
-        files.put(ResourceLocation.fromNamespaceAndPath(MOD_ID, "blockstates/" + block.GetRegeneratingBlockName() + ".json"),
+        files.put(ResourceLocation.fromNamespaceAndPath(RegeneratingOres.MOD_ID, "blockstates/" + block.GetRegeneratingBlockName() + ".json"),
                 "{\n" +
                 "  \"variants\": {\n" +
                 "    \"\": { \"model\": \"" + modelLocation + "\" }\n" +
@@ -103,6 +101,6 @@ public class DynamicResourcePack extends AbstractPackResources {
         });
     }
 
-    @Override public Set<String> getNamespaces(PackType t) { return Set.of(MOD_ID, "minecraft"); }
+    @Override public Set<String> getNamespaces(PackType t) { return Set.of(RegeneratingOres.MOD_ID, "minecraft"); }
     @Override public void close() { files.clear(); }
 }

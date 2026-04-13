@@ -1,6 +1,6 @@
-package me.jesuismister.regenerating_ores;
+package me.psiber.regenerating_ores;
 
-import me.jesuismister.regenerating_ores.blocks.RegeneratingOreBlock;
+import me.psiber.regenerating_ores.blocks.RegeneratingOreBlock;
 import net.minecraft.core.BlockPos;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;

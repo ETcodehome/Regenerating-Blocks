@@ -1,4 +1,4 @@
-package me.jesuismister.regenerating_ores;
+package me.psiber.regenerating_ores;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.packs.PackLocationInfo;
@@ -11,13 +11,11 @@ import net.minecraft.server.packs.PackSelectionConfig;
 
 import java.util.Optional;
 
-import static me.jesuismister.regenerating_ores.RegeneratingOres.MOD_ID;
-
 public class PackFinderHandler {
 
     public static void register(AddPackFindersEvent event) {
 
-        PackLocationInfo locInfo = new PackLocationInfo(MOD_ID, Component.literal("Regenerating Ores Resources"), PackSource.BUILT_IN, Optional.empty());
+        PackLocationInfo locInfo = new PackLocationInfo(RegeneratingOres.MOD_ID, Component.literal("Regenerating Ores Resources"), PackSource.BUILT_IN, Optional.empty());
 
         // Explicitly define the ResourcesSupplier to avoid functional interface ambiguity
         Pack.ResourcesSupplier supplier = new Pack.ResourcesSupplier() {

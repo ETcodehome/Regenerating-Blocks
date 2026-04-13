@@ -1,8 +1,8 @@
-package me.jesuismister.regenerating_ores.blocks;
+package me.psiber.regenerating_ores.blocks;
 
-import me.jesuismister.regenerating_ores.ConfigManager;
-import me.jesuismister.regenerating_ores.RegenManager;
-import me.jesuismister.regenerating_ores.Regenerable;
+import me.psiber.regenerating_ores.ConfigManager;
+import me.psiber.regenerating_ores.RegenManager;
+import me.psiber.regenerating_ores.Regenerable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
