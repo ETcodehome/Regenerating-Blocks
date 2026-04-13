@@ -410,6 +410,6 @@ public class RegeneratingBlock extends Block {
                         .map(StackWalker.StackFrame::getMethodName)
                         .orElse("unknown"));
 
-        System.out.println("[Regenerating Ores][" + callerName +"] " + s);
+        System.out.println("[Regenerating Blocks][" + callerName +"] " + s);
     }
 }

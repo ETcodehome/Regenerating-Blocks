@@ -15,7 +15,7 @@ public class PackFinderHandler {
 
     public static void register(AddPackFindersEvent event) {
 
-        PackLocationInfo locInfo = new PackLocationInfo(RegeneratingBlocks.MOD_ID, Component.literal("Regenerating Ores Resources"), PackSource.BUILT_IN, Optional.empty());
+        PackLocationInfo locInfo = new PackLocationInfo(RegeneratingBlocks.MOD_ID, Component.literal("Regenerating Blocks Resources"), PackSource.BUILT_IN, Optional.empty());
 
         // Explicitly define the ResourcesSupplier to avoid functional interface ambiguity
         Pack.ResourcesSupplier supplier = new Pack.ResourcesSupplier() {

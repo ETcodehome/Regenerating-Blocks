@@ -80,7 +80,7 @@ public class DynamicResourcePack extends AbstractPackResources {
             String metadata = """
                 {
                   "pack": {
-                    "description": "Regenerating Ores Resources",
+                    "description": "Regenerating Blocks Resources",
                     "pack_format": 34
                   }
                 }
