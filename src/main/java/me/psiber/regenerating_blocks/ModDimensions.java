@@ -8,14 +8,14 @@ import net.minecraft.core.registries.Registries;
 public class ModDimensions {
     public static final ResourceKey<Level> MIRROR_OVERWORLD = ResourceKey.create(
             Registries.DIMENSION,
-            ResourceLocation.fromNamespaceAndPath(RegeneratingBlocks.MOD_ID, "overworld")
+            ResourceLocation.fromNamespaceAndPath(RegeneratingBlocks.MOD_ID, "mirror_overworld")
     );
     public static final ResourceKey<Level> MIRROR_NETHER = ResourceKey.create(
             Registries.DIMENSION,
-            ResourceLocation.fromNamespaceAndPath(RegeneratingBlocks.MOD_ID, "the_nether")
+            ResourceLocation.fromNamespaceAndPath(RegeneratingBlocks.MOD_ID, "mirror_the_nether")
     );
     public static final ResourceKey<Level> MIRROR_THE_END = ResourceKey.create(
             Registries.DIMENSION,
-            ResourceLocation.fromNamespaceAndPath(RegeneratingBlocks.MOD_ID, "the_end")
+            ResourceLocation.fromNamespaceAndPath(RegeneratingBlocks.MOD_ID, "mirror_the_end")
     );
 }

@@ -29,30 +29,10 @@ public abstract class SetBlockMixin {
         // exit quickly if block is not a regenerating block, do standard behavior
         BlockState oldState = level.getBlockState(pos);
         if (!ModBlocks.supportedOriginalBlocks.contains(oldState.getBlock())) {
-            RegeneratingBlock.log("Ignoring, oldstate " + oldState + " is not a regenerating flagged block.");
             return;
         }
 
-        // Only care if we are moving FROM a supported block to not the regenerating state
-        boolean stateMutating = newState.getBlock() != oldState.getBlock();
-        if (!stateMutating) return;
-        if (stateMutating) {
-            RegeneratingBlock.log("Block changing into " + newState);
-            //BlockBreakHandler.handleBlockBreakEvent(serverLevel, pos, oldState, newState, false);
-            level.setBlock(pos, oldState, 19, 0); // set it back to the regenerating block it should be
-            return;
-        }
-
-        // Guard against triggering behavior if we're already regenerating
-        RegenManager.WorldPos key = new RegenManager.WorldPos(level.dimension(), pos.immutable());
-        if (RegenManager.isRegenerating(key)) {
-            level.setBlock(pos, oldState, 19, 0);
-            RegeneratingBlock.log("Regenerating, making the new state the old state");
-            return;
-        }
-
-
-
-        // do nothing I guess?
+        RegeneratingBlock.log("A block was set to something");
+        BlockBreakHandler.handleBlockBreakEvent(serverLevel, pos, oldState, false);
     }
 }
