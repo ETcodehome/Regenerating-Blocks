@@ -5,7 +5,8 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "BlockStateTagMixin",
-    "HolderTagMixin"
+    "HolderTagMixin",
+    "SetBlockMixin"
   ],
   "injectors": {
     "defaultRequire": 1

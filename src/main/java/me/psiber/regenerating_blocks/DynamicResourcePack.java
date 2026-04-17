@@ -1,6 +1,7 @@
 package me.psiber.regenerating_blocks;
 
 import me.psiber.regenerating_blocks.blocks.ModBlocks;
+import me.psiber.regenerating_blocks.blocks.RegeneratingBlock;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.AbstractPackResources;
 import net.minecraft.server.packs.PackLocationInfo;
@@ -13,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 
 public class DynamicResourcePack extends AbstractPackResources {
@@ -99,6 +101,10 @@ public class DynamicResourcePack extends AbstractPackResources {
                 output.accept(location, this.getResource(type, location));
             }
         });
+
+        if (path.startsWith("neoforge/biome_modifier")) {
+            RegeneratingBlock.log("test");
+        }
     }
 
     @Override public Set<String> getNamespaces(PackType t) { return Set.of(RegeneratingBlocks.MOD_ID, "minecraft"); }
