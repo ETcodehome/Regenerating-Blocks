@@ -18,4 +18,17 @@ public class ModDimensions {
             Registries.DIMENSION,
             ResourceLocation.fromNamespaceAndPath(RegeneratingBlocks.MOD_ID, "mirror_the_end")
     );
+
+    static boolean isMirrorDimension(ResourceKey<Level> key) {
+        return key == MIRROR_OVERWORLD ||
+                key == MIRROR_NETHER ||
+                key == MIRROR_THE_END;
+    }
+
+    public static ResourceKey<Level> getMirrorKey(ResourceKey<Level> source) {
+        if (source == Level.OVERWORLD) return MIRROR_OVERWORLD;
+        if (source == Level.NETHER) return MIRROR_NETHER;
+        if (source == Level.END) return MIRROR_THE_END;
+        return null;
+    }
 }

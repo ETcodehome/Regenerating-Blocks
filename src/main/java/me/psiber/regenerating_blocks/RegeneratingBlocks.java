@@ -13,9 +13,9 @@ import java.util.List;
 @Mod(RegeneratingBlocks.MOD_ID)
 public class RegeneratingBlocks {
     public static final String MOD_ID = "regenerating_blocks";
-    public static HashMap<String, Regenerable> supportedBlocks;
     public static HashMap<String, Integer> regenTimers;
     public static HashSet<Block> supportedOriginalBlocks;
+    private static boolean loggingActive;
 
     public RegeneratingBlocks(IEventBus modEventBus, ModContainer modContainer) {
 
@@ -24,14 +24,13 @@ public class RegeneratingBlocks {
         List<Regenerable> blocksFromConfig = ConfigManager.getSupportedBlocks().stream()
                 .map(Regenerable::new)
                 .toList();
+        loggingActive = ConfigManager.getSettings().verboseLogging();
 
         // Populate a lookup table so we can get all configuration data from blockstates
-        supportedBlocks = new HashMap<String, Regenerable>();
         supportedOriginalBlocks = new HashSet<Block>();
         regenTimers = new HashMap<String, Integer>();
         for (Regenerable block : blocksFromConfig )
         {
-            supportedBlocks.put(block.GetRegeneratingNameWithNamespace(), block);
             supportedOriginalBlocks.add(block.GetSourceBlock());
             regenTimers.put(block.namespace + ":" + block.blockName, block.regenAfter);
         }
@@ -43,7 +42,7 @@ public class RegeneratingBlocks {
     public static void log(String s){
 
         // Guard against doing the expensive stack walk if logging is disabled
-        if (!ConfigManager.getSettings().verboseLogging()){ return; }
+        if (!loggingActive){return;}
 
         String callerName = StackWalker.getInstance()
                 .walk(frames -> frames

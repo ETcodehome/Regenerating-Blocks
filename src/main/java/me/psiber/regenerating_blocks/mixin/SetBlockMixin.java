@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import static me.psiber.regenerating_blocks.ChunkMirrorHandler.getMirrorKey;
+import static me.psiber.regenerating_blocks.ModDimensions.getMirrorKey;
 
 @Mixin(Level.class)
 public abstract class SetBlockMixin {
@@ -116,7 +116,6 @@ public abstract class SetBlockMixin {
                 level.getServer().execute(() -> level.setBlock(pos, oldState, flags));
             }
         }
-
 
     }
 

@@ -10,95 +10,71 @@ import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.ProtoChunk;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.chunk.storage.ChunkSerializer;
+import net.minecraft.world.level.chunk.storage.RegionStorageInfo;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.level.ChunkDataEvent;
 import net.neoforged.neoforge.event.level.ChunkEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 @EventBusSubscriber(modid = RegeneratingBlocks.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
 public class ChunkMirrorHandler {
 
-    // Session cache to track which chunks have the flag on disk.
-    // Uses Long encoded ChunkPos for memory efficiency.
-
-    private static final Map<ResourceKey<Level>, Set<Long>> MIRRORED_BY_WORLD = new ConcurrentHashMap<>();
-
-    /**
-     * Step 1: Scan the incoming NBT from disk/generator.
-     */
-    @SubscribeEvent
-    public static void onDataLoad(ChunkDataEvent.Load event) {
-        if (event.getData().getBoolean("RegenMirrored")) {
-            getCacheFor((Level) event.getLevel()).add(event.getChunk().getPos().toLong());
-        }
-    }
-
-    private static Set<Long> getCacheFor(Level level) {
-        return MIRRORED_BY_WORLD.computeIfAbsent(level.dimension(), k -> ConcurrentHashMap.newKeySet());
-    }
-
-    /**
-     * Step 2: Act once the chunk is physically in the level.
-     */
     @SubscribeEvent
     public static void onChunkLoad(ChunkEvent.Load event) {
-        mirrorPristineChunk(event.getChunk());
+        mirrorChunkIfRequired(event.getChunk());
     }
 
-    public static void mirrorPristineChunk(ChunkAccess chunk) {
+    public static void mirrorChunkIfRequired(ChunkAccess chunk) {
+
         Level level = chunk.getLevel();
         if (level.isClientSide() || !(level instanceof ServerLevel sourceLevel)) {
             return;
         }
 
-        // Explicitly ignore chunks that are part of the mirror dimensions.
-        // This prevents the mirror from populating the session cache for itself.
-        ResourceKey<Level> sourceKey = sourceLevel.dimension();
-        if (isMirrorDimension(sourceKey)) {
-            return;
-        }
-
-        ChunkPos pos = chunk.getPos();
-        long posLong = pos.toLong();
-
-        // 1. Only process FULL chunks in dimensions we care about
+        // Only process FULL chunks in dimensions we care about. Earlier states should be ignored
         if (!chunk.getPersistedStatus().isOrAfter(ChunkStatus.FULL)) {
             RegeneratingBlocks.log("FAILED MIRRORING OF CHUNK (NOT READY) chunk: " + chunk);
             return;
         }
 
-        ResourceKey<Level> targetKey = getMirrorKey(sourceLevel.dimension());
-        if (targetKey == null) return;
+        // Guard against a chunk load inside a mirror dimension
+        ResourceKey<Level> sourceKey = sourceLevel.dimension();
+        if (ModDimensions.isMirrorDimension(sourceKey)) {
+            // We deliberately don't take any action in a mirror dimension.
+            // chunks generated here by players moving around will be void and later overwritten.
+            return;
+        }
 
-        // 3. Perform Mirroring Logic
+        ResourceKey<Level> targetKey = ModDimensions.getMirrorKey(sourceLevel.dimension());
+        if (targetKey == null) {
+            RegeneratingBlocks.log("Mirror key was null");
+            return;
+        }
+
         ServerLevel mirrorLevel = sourceLevel.getServer().getLevel(targetKey);
-        if (mirrorLevel == null) return;
-
-        // Session check (fast), checks if the in memory cache says it is already mirrored
-        if (getCacheFor(mirrorLevel).contains(posLong)) {
-            // Noisy RegeneratingBlock.log("Chunk mirrored already: " + chunk);
+        if (mirrorLevel == null) {
+            RegeneratingBlocks.log("Mirror Level was null");
             return;
         }
 
-        // Persisted check (once off slow), checks if the chunk itself says it is mirrored
-        boolean alreadyInMirror = mirrorLevel.getChunkSource().chunkMap.read(pos).join()
-                .map(nbt -> nbt.getBoolean("RegenMirrored"))
-                .orElse(false);
-
-        if (alreadyInMirror) {
-            RegeneratingBlocks.log("Mirror chunk already exists: " + pos + " to " + targetKey.location());
-            getCacheFor(mirrorLevel).add(posLong);
+        // Checks the block in the mirror dimension
+        ChunkPos pos = chunk.getPos();
+        long posLong = pos.toLong();
+        if (isPhysicallyMirrored(mirrorLevel, pos)) {
+            RegeneratingBlocks.log("Chunk is already mirrored at " + pos);
             return;
         }
 
-        RegeneratingBlocks.log("Mirroring pristine chunk: " + pos + " to " + targetKey.location());
+        /////////////////////////////////////////////////////////////////////////////
+        // FIRST TIME LOAD HANDLING
+        /////////////////////////////////////////////////////////////////////////////
+
+        RegeneratingBlocks.log("First Load. Mirroring pristine chunk: " + pos + " to " + targetKey.location());
 
         // Create NBT from the current state (which at this moment is freshly generated/loaded)
         CompoundTag mirrorData = ChunkSerializer.write(sourceLevel, chunk);
@@ -108,34 +84,55 @@ public class ChunkMirrorHandler {
         mirrorData.remove("block_entities");
         mirrorData.remove("PostProcessing");
 
-        // Set the flag for both the Mirror and the Overworld
-        mirrorData.putBoolean("RegenMirrored", true);
-
         // Injects into Mirror storage
         mirrorLevel.getChunkSource().chunkMap.write(pos, mirrorData);
 
-        // Mark as mirrored so that we don't repeat this for the rest of the session
-        getCacheFor(mirrorLevel).add(posLong);
-    }
+        // Create a temporary ProtoChunk
+        RegionStorageInfo storageInfo = new RegionStorageInfo(
+                sourceLevel.getServer().getWorldData().getLevelName(),
+                targetKey,
+                "chunk"
+        );
 
-    @SubscribeEvent
-    public static void onChunkUnload(ChunkEvent.Unload event) {
-        if (!event.getLevel().isClientSide()) {
-            getCacheFor((Level) event.getLevel()).remove(event.getChunk().getPos().toLong());
+        ProtoChunk proto = ChunkSerializer.read(
+                mirrorLevel,
+                mirrorLevel.getPoiManager(),
+                storageInfo,
+                pos,
+                mirrorData
+        );
+
+        // Hot-swap the block sections into the live Mirror RAM
+        LevelChunk mirrorChunk = mirrorLevel.getChunkSource().getChunk(pos.x, pos.z, true);
+        if (mirrorChunk != null && proto != null) {
+            // This is the atomic transfer: replace the block sections of the
+            // empty mirror chunk with the data from the protochunk
+            for (int i = 0; i < mirrorChunk.getSections().length; i++) {
+                mirrorChunk.getSections()[i] = proto.getSections()[i];
+            }
+
+            // 5. Now that the terrain is in RAM, set your flag
+            markMirrorAsComplete(mirrorLevel, pos);
+
+            // 6. Mark for save
+            mirrorChunk.setUnsaved(true);
         }
     }
 
-    private static boolean isMirrorDimension(ResourceKey<Level> key) {
-        return key == ModDimensions.MIRROR_OVERWORLD ||
-                key == ModDimensions.MIRROR_NETHER ||
-                key == ModDimensions.MIRROR_THE_END;
+    private static void markMirrorAsComplete(ServerLevel mirrorLevel, ChunkPos pos) {
+        // Get the absolute block coordinates for the center of the chunk at the very bottom
+        // minY is -64 in 1.21.1 Overworld/Dimensions
+        BlockPos flagPos = new BlockPos(pos.getMinBlockX() + 8, mirrorLevel.getMinBuildHeight(), pos.getMinBlockZ() + 8);
+
+        // We use flag 2 (Send to clients) and 16 (Don't trigger neighbors/physics)
+        mirrorLevel.setBlock(flagPos, net.minecraft.world.level.block.Blocks.BARRIER.defaultBlockState(), 18);
     }
 
-    public static ResourceKey<Level> getMirrorKey(ResourceKey<Level> source) {
-        if (source == Level.OVERWORLD) return ModDimensions.MIRROR_OVERWORLD;
-        if (source == Level.NETHER) return ModDimensions.MIRROR_NETHER;
-        if (source == Level.END) return ModDimensions.MIRROR_THE_END;
-        return null;
+    private static boolean isPhysicallyMirrored(Level mirrorLevel, ChunkPos pos) {
+        BlockPos flagPos = new BlockPos(pos.getMinBlockX() + 8, mirrorLevel.getMinBuildHeight(), pos.getMinBlockZ() + 8);
+
+        // Check the block state at the bottom of the world
+        return mirrorLevel.getBlockState(flagPos).is(net.minecraft.world.level.block.Blocks.BARRIER);
     }
 
     @SubscribeEvent
@@ -151,10 +148,8 @@ public class ChunkMirrorHandler {
     private static void sweepSpawn(MinecraftServer server, ResourceKey<Level> dimKey) {
         ServerLevel level = server.getLevel(dimKey);
         if (level == null) return;
-
         BlockPos spawnPos = level.getSharedSpawnPos();
         int radius = level.getGameRules().getInt(GameRules.RULE_SPAWN_CHUNK_RADIUS);
-        Set<Long> worldCache = getCacheFor(level);
 
         int spawnX = spawnPos.getX() >> 4;
         int spawnZ = spawnPos.getZ() >> 4;
@@ -163,13 +158,11 @@ public class ChunkMirrorHandler {
             for (int z = -radius; z <= radius; z++) {
                 ChunkPos pos = new ChunkPos(spawnX + x, spawnZ + z);
                 LevelChunk chunk = level.getChunkSource().getChunk(pos.x, pos.z, false);
-
-                if (chunk != null && !worldCache.contains(pos.toLong())) {
-                    if (chunk.getPersistedStatus().isOrAfter(ChunkStatus.FULL)) {
-                        mirrorPristineChunk(chunk);
-                    }
+                if (chunk != null && chunk.getPersistedStatus().isOrAfter(ChunkStatus.FULL)) {
+                    mirrorChunkIfRequired(chunk);
                 }
             }
         }
     }
 }
+
