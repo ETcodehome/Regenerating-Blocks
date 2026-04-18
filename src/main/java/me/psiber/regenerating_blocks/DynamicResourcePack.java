@@ -1,7 +1,5 @@
 package me.psiber.regenerating_blocks;
 
-import me.psiber.regenerating_blocks.blocks.ModBlocks;
-import me.psiber.regenerating_blocks.blocks.RegeneratingBlock;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.AbstractPackResources;
 import net.minecraft.server.packs.PackLocationInfo;
@@ -14,7 +12,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 
 public class DynamicResourcePack extends AbstractPackResources {
@@ -26,7 +23,7 @@ public class DynamicResourcePack extends AbstractPackResources {
         addLanguageSupport();
         addInventoryAesthetic();
 
-        for (Regenerable block : ModBlocks.supportedBlocks.values()) {
+        for (Regenerable block : RegeneratingBlocks.supportedBlocks.values()) {
             addRegeneratingAesthetic(block);
         }
 
@@ -34,7 +31,7 @@ public class DynamicResourcePack extends AbstractPackResources {
 
     public void addInventoryAesthetic()
     {
-        for (Regenerable block : ModBlocks.supportedBlocks.values()) {
+        for (Regenerable block : RegeneratingBlocks.supportedBlocks.values()) {
             files.put(ResourceLocation.fromNamespaceAndPath(RegeneratingBlocks.MOD_ID, "models/item/" + block.GetRegeneratingBlockName() + ".json"),
                     "{\n" +
                     " \"parent\": \"" + block.namespace + ":block/" + block.blockName +"\"\n" +
@@ -103,7 +100,7 @@ public class DynamicResourcePack extends AbstractPackResources {
         });
 
         if (path.startsWith("neoforge/biome_modifier")) {
-            RegeneratingBlock.log("test");
+            RegeneratingBlocks.log("test");
         }
     }
 

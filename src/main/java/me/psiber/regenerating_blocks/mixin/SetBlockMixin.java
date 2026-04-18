@@ -1,22 +1,16 @@
 package me.psiber.regenerating_blocks.mixin;
 
-import me.psiber.regenerating_blocks.ConfigManager;
 import me.psiber.regenerating_blocks.RegenManager;
-import me.psiber.regenerating_blocks.blocks.ModBlocks;
-import me.psiber.regenerating_blocks.blocks.RegeneratingBlock;
+import me.psiber.regenerating_blocks.RegeneratingBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.AABB;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -41,14 +35,14 @@ public abstract class SetBlockMixin {
         BlockState oldState = level.getBlockState(pos);
 
         // Performance Guard: Exit if not a block we care about
-        if (!ModBlocks.supportedOriginalBlocks.contains(oldState.getBlock())) {
+        if (!RegeneratingBlocks.supportedOriginalBlocks.contains(oldState.getBlock())) {
             return;
         }
 
         // If currently regenerating, never allow break (and thus no drops)
         RegenManager.WorldPos key = new RegenManager.WorldPos(level.dimension(), pos.immutable());
         if (RegenManager.isRegenerating(key)) {
-            RegeneratingBlock.log("Intercepted break: Block is actively regenerating. Aborting destruction.");
+            RegeneratingBlocks.log("Intercepted break: Block is actively regenerating. Aborting destruction.");
             cir.setReturnValue(false);
             return;
         }
@@ -64,7 +58,7 @@ public abstract class SetBlockMixin {
         Level level = (Level) (Object) this;
 
         BlockState oldState = level.getBlockState(pos);
-        if (!ModBlocks.supportedOriginalBlocks.contains(oldState.getBlock())){
+        if (!RegeneratingBlocks.supportedOriginalBlocks.contains(oldState.getBlock())){
             // RegeneratingBlock.log("Block isn't supported, doing nothing"); NOISY
             return;
         }
@@ -75,12 +69,12 @@ public abstract class SetBlockMixin {
         if (level.isClientSide()) {
             RegenManager.WorldPos key = new RegenManager.WorldPos(((Level)(Object)this).dimension(), pos.immutable());
             if (RegenManager.isRegenerating(key)) {
-                RegeneratingBlock.log("Client realised block is regenerating and ignored the break.");
+                RegeneratingBlocks.log("Client realised block is regenerating and ignored the break.");
                 cir.setReturnValue(false);
                 return;
             }
             // Note: We don't check the Mirror here because it's Server-only.
-            RegeneratingBlock.log("Client saw a non regenerating break event and took no further action.");
+            RegeneratingBlocks.log("Client saw a non regenerating break event and took no further action.");
             return;
         }
 
@@ -92,7 +86,7 @@ public abstract class SetBlockMixin {
 
             // Guard - If actively regenerating, abort immediately
             if (RegenManager.isRegenerating(key)) {
-                RegeneratingBlock.log("Server realised block is regenerating and actively prevented the break.");
+                RegeneratingBlocks.log("Server realised block is regenerating and actively prevented the break.");
                 cir.setReturnValue(false);
 
                 return;
@@ -103,13 +97,13 @@ public abstract class SetBlockMixin {
             ServerLevel mirrorLevel = (mirrorKey != null) ? level.getServer().getLevel(mirrorKey) : null;
 
             if (mirrorLevel == null){
-                RegeneratingBlock.log("Server couldn't resolve a mirror level.");
+                RegeneratingBlocks.log("Server couldn't resolve a mirror level.");
                 return;
             }
 
             // Guard - Naturally Spawned Check
             if (!mirrorLevel.getBlockState(pos).is(oldState.getBlock())) {
-                RegeneratingBlock.log("Server did nothing. Mirror world block didn't match block being broken.");
+                RegeneratingBlocks.log("Server did nothing. Mirror world block didn't match block being broken.");
                 return;
             }
 
@@ -118,7 +112,7 @@ public abstract class SetBlockMixin {
                 RegenManager.cacheBreakData(level, pos);
                 level.levelEvent(2001, pos, Block.getId(oldState));
                 cir.setReturnValue(false);
-                RegeneratingBlock.log("Allowed break, but prevented block destruction");
+                RegeneratingBlocks.log("Allowed break, but prevented block destruction");
                 return;
             }
         }

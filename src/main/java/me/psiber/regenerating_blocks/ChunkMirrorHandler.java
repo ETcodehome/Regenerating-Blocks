@@ -1,6 +1,5 @@
 package me.psiber.regenerating_blocks;
 
-import me.psiber.regenerating_blocks.blocks.RegeneratingBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
@@ -81,7 +80,7 @@ public class ChunkMirrorHandler {
 
         // 1. Only process FULL chunks in dimensions we care about
         if (!chunk.getPersistedStatus().isOrAfter(ChunkStatus.FULL)) {
-            RegeneratingBlock.log("FAILED MIRRORING OF CHUNK (NOT READY) chunk: " + chunk);
+            RegeneratingBlocks.log("FAILED MIRRORING OF CHUNK (NOT READY) chunk: " + chunk);
             return;
         }
 
@@ -98,12 +97,12 @@ public class ChunkMirrorHandler {
                 .orElse(false);
 
         if (alreadyInMirror) {
-            RegeneratingBlock.log("Mirror chunk already exists: " + pos + " to " + targetKey.location());
+            RegeneratingBlocks.log("Mirror chunk already exists: " + pos + " to " + targetKey.location());
             ALREADY_MIRRORED.add(posLong);
             return;
         }
 
-        RegeneratingBlock.log("Mirroring pristine chunk: " + pos + " to " + targetKey.location());
+        RegeneratingBlocks.log("Mirroring pristine chunk: " + pos + " to " + targetKey.location());
 
         // Create NBT from the current state (which at this moment is freshly generated/loaded)
         CompoundTag mirrorData = ChunkSerializer.write(sourceLevel, chunk);
@@ -150,7 +149,7 @@ public class ChunkMirrorHandler {
 
         if (overworld == null) return;
 
-        RegeneratingBlock.log("Starting Spawn Chunk Mirror Sweep...");
+        RegeneratingBlocks.log("Starting Spawn Chunk Mirror Sweep...");
 
         // Spawn chunks in 1.21.1 are typically within a small radius of the world spawn
         BlockPos spawnPos = overworld.getSharedSpawnPos();
@@ -167,13 +166,13 @@ public class ChunkMirrorHandler {
 
                 if (chunk != null && !ALREADY_MIRRORED.contains(pos.toLong())) {
                     if (chunk.getPersistedStatus().isOrAfter(ChunkStatus.FULL)) {
-                        RegeneratingBlock.log("Sweep: Capturing spawn chunk at " + pos);
+                        RegeneratingBlocks.log("Sweep: Capturing spawn chunk at " + pos);
 
                         mirrorPristineChunk(chunk);
                     }
                 }
             }
         }
-        RegeneratingBlock.log("Spawn Sweep Complete.");
+        RegeneratingBlocks.log("Spawn Sweep Complete.");
     }
 }

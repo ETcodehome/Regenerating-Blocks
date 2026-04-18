@@ -1,7 +1,6 @@
 package me.psiber.regenerating_blocks;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
-import me.psiber.regenerating_blocks.blocks.RegeneratingBlock;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
@@ -30,7 +29,7 @@ public class Regenerable {
 
             if (found == Blocks.AIR) {
                 // Log a warning if the block is missing when actually accessed
-                RegeneratingBlock.log("Could not find source block " + originalMaterial);
+                RegeneratingBlocks.log("Could not find source block " + originalMaterial);
             }
             return found;
         });
