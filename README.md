@@ -5,49 +5,52 @@
 - Continued under the permissive MIT license as per the original repo.
 
 # Behavior
-- Plugin adds regenerating variants of normal blocks that respawn after a time delay. 
+- Plugin makes configured block types regenerate a set time after being broken.
 - Clean and mod friendly / compatible implementation.
 
 # Motivations
-- Updated primarily for personal usage similar to the original developer. Regenerating blocks don't get destroyed when broken, instead recovering back to their original state.
-- I wanted to use it with ReliableReplacer so that players inhabit worlds properly rather than just flattening everything and behaving like a plague of locusts on otherwise pristine landscapes. 
+- Updated primarily for personal usage similar to the original developer. Regenerating blocks don't get destroyed when broken, instead recovering back to their original state over time.
+- The hope is to encourage inhabiting worlds properly rather than just flattening everything and behaving like a plague of locusts across pristine landscapes. 
 - I think having a reason to visit the same area over and over encourages people to "settle in" and improve an area. 
 - Not being able to mine most "hard" blocks should encourage building on the land and traverse caves etc, not just digging direct paths (encouraging organic development more like the real world).
-- Makes skilling implementations more functional if you're able to revisit / farm certain areas.
-- I don't currently have plans to port it to later / earlier versions or other modding frameworks. It will likely only ever target versions supported by the Create mod, and most likely only if/when I personally roll up to that version. 
+- Makes skilling implementations more functional if you're able to revisit / farm certain areas. 
 
-# Major modifications from ancestor repository
-- Imported onto GitHub as preferred source management arrangement.
-- Moved entire system to a dynamic resource pack which is runtime generated for ease of extension and compatibility. 
-- Straightforward configuration. Add the block names to regenerating_blocks.json config and get a regenerating block version.
-- Support for modded blocks from other namespaces.
-- Regenerating blocks visually repair themselves after being mined.
-- Regenerating blocks respect tool properties and enchantments (supports all tools, not just pickaxes). 
-- Regenerating blocks match source block drop experience.
-- Regenerating blocks are not destroyed by explosions.
-- Regenerating blocks can be broken by creative game mode players allowing removal.
-- Regenerating blocks inherits all source block tags. 
-  Can be checked using similar command: 
-  /execute if block x y z #minecraft:mineable/pickaxe run say Tag Mirroring Active) 
-  This also fixes things like checks for moss being able to spread to those blocks.
-- Regenerating blocks inherit all properties from ancestor (ie hardness, explosion resistance, sounds etc)
-- Best efforts have been made to ensure that source block state is respected and compatible.
-- Regenerating blocks sparkle when they regenerate (with config toggle)
+# Implementation details
+- When you load, a copy of each chunk loaded is mirrored into a new world. This is fast and performant (not a fresh generation again).
+- These mirrored worlds essentially track which blocks are naturally spawned and are a template for which blocks will regenerate.
+- If a *configured* block in the mirror world matches a block in the world (overworld, nether, end) it regenerates.
+- Player placed blocks won't regenerate (by design) unless the mirror world has the same block there already.
+- Blocks are visibly broken while regenerating (cracks show, repairing fizzes). 
+- Blocks sparkle when they regenerate (with config toggle)
+- Simple configuration, a block name and a respawn time in seconds in regenerating_blocks.json config and they'll regen.
+- Approach should support breaks of all non-entity blocks (including modded blocks).
+- One single block on the bottom layer of chunks won't regenerate. In the regenerating mirror worlds it's used to track if a chunk has been mirrored.
+- Safe to remove. No polluting world state is baked. Remove the mod, delete the mirror world save data.
 
 # Caveats
-- Implementations that directly check/compare against a block (ie Block = Blocks.STONE) will not resolve since the regenerating block is a distinct block.
-- The above can be fixed by proper use of tags and demonstrates why they should be preferred for compatibility instead of direct comparisons like this. 
-- Prefer loading this late in a mod order if possible. I haven't had bad times due to load order in my personal usage so this can be ignored for most users. Probably.
+- Blocks are still susceptible to conversions (ie stone -> moss, dirt -> farmland). This is not a grief protection plugin.
+- A regenerating block destroyed/converted in the main world can be restored by placing the same block back there again.
+  Because the mirror world still contains the natural block, it will continue to regenerate.
+- I don't currently have plans to port it to later / earlier versions or other modding frameworks. 
+  It will likely only ever target versions supported by the Create mod, and most likely only if/when I personally roll up to that version.
+- Will increase disk usage. It's a necessary tradeoff to have what is essentially a single state voxel version control system.
+
+# Major modifications from ancestor repository
+- Pretty much an end to end rewrite to expand support and make it universally compatible.
+- Previously the blocks were new blocks that tried to be other blocks, but now the regenerating blocks ARE the original blocks.
+- Imported onto GitHub as preferred source management arrangement.
+- Moved entire system to a dynamic resource pack which is runtime generated for ease of extension and compatibility.
+- Now supports modded blocks from other namespaces.
+- Breaks are not modified, respect tool properties and enchantments (all tools, not just pickaxes). 
+- Breaks match source block drop experience behaviour.
 
 # Bugs
 - Much more likely to be addressed if you raise an issue.
 
 # Performance Notes
 - I don't like slow code. This has been implemented in a performance sensitive manner.
-- Repairing of broken blocks is done using natively implemented scheduled ticks.
-- Underlying break data tables don't get walked, always use fast direct key lookups.
-- Break status is stored in memory, resets if server is shutdown.
-- State is failure safe, resets to ready to be harvested state ensuring blocks don't get locked regenerating.
+- Break status per block is stored in memory, break status resets when server is shutdown.
+- State is failure safe, defaults to ready to be harvested state ensuring blocks never get locked regenerating.
 
 # Dev notes
 - IDE: IntelliJ & Gradle tab reload top right 
