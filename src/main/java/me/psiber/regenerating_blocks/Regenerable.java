@@ -1,4 +1,5 @@
 package me.psiber.regenerating_blocks;
+
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import me.psiber.regenerating_blocks.config.ConfigBlocks;
@@ -12,8 +13,6 @@ public class Regenerable {
     public final String namespace;
     public final String blockName;
     public final int regenAfter;
-    public DeferredBlock<?> deferredBlock;
-    // Use a Memoized Supplier: it runs once and caches the result
     private final Supplier<Block> sourceBlockSupplier;
 
     public Regenerable(ConfigBlocks config){

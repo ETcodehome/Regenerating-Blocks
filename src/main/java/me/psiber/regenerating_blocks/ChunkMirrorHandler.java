@@ -19,8 +19,6 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.level.ChunkEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 
-import java.util.Set;
-
 @EventBusSubscriber(modid = RegeneratingBlocks.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
 public class ChunkMirrorHandler {
 
@@ -64,7 +62,6 @@ public class ChunkMirrorHandler {
 
         // Checks the block in the mirror dimension
         ChunkPos pos = chunk.getPos();
-        long posLong = pos.toLong();
         if (isPhysicallyMirrored(mirrorLevel, pos)) {
             RegeneratingBlocks.log("Chunk is already mirrored at " + pos);
             return;
@@ -105,23 +102,23 @@ public class ChunkMirrorHandler {
         // Hot-swap the block sections into the live Mirror RAM
         LevelChunk mirrorChunk = mirrorLevel.getChunkSource().getChunk(pos.x, pos.z, true);
         if (mirrorChunk != null && proto != null) {
-            // This is the atomic transfer: replace the block sections of the
+
+            // Replace the block sections of the
             // empty mirror chunk with the data from the protochunk
             for (int i = 0; i < mirrorChunk.getSections().length; i++) {
                 mirrorChunk.getSections()[i] = proto.getSections()[i];
             }
 
-            // 5. Now that the terrain is in RAM, set your flag
+            // Finalise the copy by marking it
             markMirrorAsComplete(mirrorLevel, pos);
-
-            // 6. Mark for save
             mirrorChunk.setUnsaved(true);
         }
     }
 
     private static void markMirrorAsComplete(ServerLevel mirrorLevel, ChunkPos pos) {
+
         // Get the absolute block coordinates for the center of the chunk at the very bottom
-        // minY is -64 in 1.21.1 Overworld/Dimensions
+        // minY is -64 in 1.21.1 Overworld/Dimensions but varies by dimension
         BlockPos flagPos = new BlockPos(pos.getMinBlockX() + 8, mirrorLevel.getMinBuildHeight(), pos.getMinBlockZ() + 8);
 
         // We use flag 2 (Send to clients) and 16 (Don't trigger neighbors/physics)
@@ -137,20 +134,22 @@ public class ChunkMirrorHandler {
 
     @SubscribeEvent
     public static void onServerStarted(ServerStartedEvent event) {
-        MinecraftServer server = event.getServer();
 
-        // Sweep all primary dimensions
+        // Annoying, spawn chunks do not trigger onChunkLoad reliably.
+        // So instead we sweep them here
+        MinecraftServer server = event.getServer();
         sweepSpawn(server, Level.OVERWORLD);
         sweepSpawn(server, Level.NETHER);
         sweepSpawn(server, Level.END);
     }
 
     private static void sweepSpawn(MinecraftServer server, ResourceKey<Level> dimKey) {
+
         ServerLevel level = server.getLevel(dimKey);
         if (level == null) return;
+
         BlockPos spawnPos = level.getSharedSpawnPos();
         int radius = level.getGameRules().getInt(GameRules.RULE_SPAWN_CHUNK_RADIUS);
-
         int spawnX = spawnPos.getX() >> 4;
         int spawnZ = spawnPos.getZ() >> 4;
 
@@ -163,6 +162,8 @@ public class ChunkMirrorHandler {
                 }
             }
         }
+
     }
+
 }
 

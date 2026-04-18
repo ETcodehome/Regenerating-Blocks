@@ -2,17 +2,13 @@ package me.psiber.regenerating_blocks;
 
 import me.psiber.regenerating_blocks.config.ConfigManager;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LevelEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
-import org.joml.Vector3f;
 
 @EventBusSubscriber(modid = RegeneratingBlocks.MOD_ID)
 public class RegenTicker {
@@ -58,7 +54,9 @@ public class RegenTicker {
             boolean needsStageUpdate = currentStage != data.lastVisualStage;
             if (needsStageUpdate){
                 data.lastVisualStage = currentStage;
-                keyLevel.levelEvent(LevelEvent.LAVA_FIZZ, key.pos(), Block.getId(event.getLevel().getBlockState(key.pos())));
+                if (ConfigManager.getSettings().showParticles()) {
+                    keyLevel.levelEvent(LevelEvent.LAVA_FIZZ, key.pos(), Block.getId(event.getLevel().getBlockState(key.pos())));
+                }
             }
 
             // Only send an update if the stage has changed (optimization)
@@ -70,37 +68,6 @@ public class RegenTicker {
 
             return false;
         });
-    }
-
-    private static void sendRandomParticles(ServerLevel level, BlockPos pos){
-        var random = level.getRandom();
-
-        // Base Values
-        float baseRed = 0.85f;
-        float baseGreen = 0.85f;
-        float baseBlue = 0.85f;
-        float baseScale = 0.5f;
-
-        // We'll spawn individual particles to ensure each one has unique randomization
-        for (int i = 0; i < 8; i++) {
-            // Calculate +/- 10% variance (random.nextFloat() is 0.0 to 1.0)
-            float vFactor = 0.5f + (random.nextFloat() * 0.5f); // Results in 0.5 to 1.0
-
-            // Apply variance to color and scale
-            float r = Math.max(0, Math.min(1, baseRed * vFactor));
-            float g = Math.max(0, Math.min(1, baseGreen * vFactor));
-            float b = Math.max(0, Math.min(1, baseBlue * vFactor));
-            float scale = baseScale * vFactor;
-
-            DustParticleOptions randomizedGlow = new DustParticleOptions(new Vector3f(r, g, b), scale);
-
-            // Send individual particle with randomized spread
-            level.sendParticles(randomizedGlow,
-                    pos.getX() + 0.5 + (random.nextGaussian() * 0.2),
-                    pos.getY() + 0.5 + (random.nextGaussian() * 0.2),
-                    pos.getZ() + 0.5 + (random.nextGaussian() * 0.2),
-                    1, 0.3, 0.3, 0.3, 0.005);
-        }
     }
 
     private static void spawnSubtleEffect(ServerLevel level, BlockPos pos) {

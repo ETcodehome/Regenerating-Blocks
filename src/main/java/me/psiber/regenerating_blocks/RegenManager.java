@@ -10,15 +10,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class RegenManager {
-
-    // The "Session Map" - This clears on server reboot.
-    // Key: BlockPos (The coordinates)
-    // Value: RegenData (Break relevant custom data)
     public static final Map<WorldPos, RegenData> REGENERATING_BLOCKS = new ConcurrentHashMap<>();
-
-    public record WorldPos(ResourceKey<Level> dimension, BlockPos pos) {
-        // Records are immutable by default, perfect for Map keys!
-    }
+    public record WorldPos(ResourceKey<Level> dimension, BlockPos pos) {}
 
     public static class RegenData {
         public final long startTime;
