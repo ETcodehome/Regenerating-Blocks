@@ -1,4 +1,4 @@
-package me.psiber.regenerating_blocks;
+package me.psiber.regenerating_blocks.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

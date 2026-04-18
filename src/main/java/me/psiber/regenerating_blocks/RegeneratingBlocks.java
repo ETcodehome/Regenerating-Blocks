@@ -1,50 +1,56 @@
 package me.psiber.regenerating_blocks;
 
-import me.psiber.regenerating_blocks.blocks.ModBlocks;
-import me.psiber.regenerating_blocks.blocks.RegeneratingBlock;
-import me.psiber.regenerating_blocks.items.ModCreativeModeTabs;
-import me.psiber.regenerating_blocks.items.ModItems;
+import me.psiber.regenerating_blocks.config.ConfigManager;
+import net.minecraft.world.level.block.Block;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.neoforge.common.NeoForge;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 @Mod(RegeneratingBlocks.MOD_ID)
 public class RegeneratingBlocks {
     public static final String MOD_ID = "regenerating_blocks";
+    public static HashMap<String, Integer> regenTimers;
+    public static HashSet<Block> supportedOriginalBlocks;
+    private static boolean loggingActive;
 
     public RegeneratingBlocks(IEventBus modEventBus, ModContainer modContainer) {
-
-        // do registration
-        ModBlocks.register(modEventBus);
-        ModCreativeModeTabs.register(modEventBus);
-        ModItems.register(modEventBus);
 
         // load config files
         ConfigManager.load();
         List<Regenerable> blocksFromConfig = ConfigManager.getSupportedBlocks().stream()
                 .map(Regenerable::new)
                 .toList();
+        loggingActive = ConfigManager.getSettings().verboseLogging();
 
         // Populate a lookup table so we can get all configuration data from blockstates
-        ModBlocks.supportedBlocks = new HashMap<String, Regenerable>();
+        supportedOriginalBlocks = new HashSet<Block>();
+        regenTimers = new HashMap<String, Integer>();
         for (Regenerable block : blocksFromConfig )
         {
-            ModBlocks.supportedBlocks.put(block.GetRegeneratingNameWithNamespace(), block);
+            supportedOriginalBlocks.add(block.GetSourceBlock());
+            regenTimers.put(block.namespace + ":" + block.blockName, block.regenAfter);
         }
 
         // append virtual resources
         modEventBus.addListener(PackFinderHandler::register);
-
-        // ready the deferred blocks
-        for (Regenerable block : ModBlocks.supportedBlocks.values()) {
-            block.deferredBlock = ModBlocks.registerBlock(block.GetRegeneratingBlockName(), () -> new RegeneratingBlock(block, block.regenAfter));
-        }
-        NeoForge.EVENT_BUS.register(new BlockBreakHandler());
-
     }
 
+    public static void log(String s){
+
+        // Guard against doing the expensive stack walk if logging is disabled
+        if (!loggingActive){return;}
+
+        String callerName = StackWalker.getInstance()
+                .walk(frames -> frames
+                        .skip(1) // Skip the current method
+                        .findFirst()
+                        .map(StackWalker.StackFrame::getMethodName)
+                        .orElse("unknown"));
+
+        System.out.println("[Regenerating Blocks][" + callerName +"] " + s);
+    }
 }
