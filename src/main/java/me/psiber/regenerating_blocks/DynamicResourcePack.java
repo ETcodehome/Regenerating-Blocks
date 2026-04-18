@@ -20,46 +20,8 @@ public class DynamicResourcePack extends AbstractPackResources {
     public DynamicResourcePack(PackLocationInfo info) {
         super(info);
 
-        addLanguageSupport();
-        addInventoryAesthetic();
-
-        for (Regenerable block : RegeneratingBlocks.supportedBlocks.values()) {
-            addRegeneratingAesthetic(block);
-        }
-
-    }
-
-    public void addInventoryAesthetic()
-    {
-        for (Regenerable block : RegeneratingBlocks.supportedBlocks.values()) {
-            files.put(ResourceLocation.fromNamespaceAndPath(RegeneratingBlocks.MOD_ID, "models/item/" + block.GetRegeneratingBlockName() + ".json"),
-                    "{\n" +
-                    " \"parent\": \"" + block.namespace + ":block/" + block.blockName +"\"\n" +
-                    "}"
-            );
-        }
-    }
-
-    public void addLanguageSupport()
-    {
-        String working = "{\n";
-        working += "  \"text.regenerating_blocks.format\": \"Regenerating %s\",\n";
-        working += "  \"creativetab.regenerating_blocks.regenerating_blocks_tab_name\": \"Regenerating Blocks\"\n}\n";
-        files.put(ResourceLocation.fromNamespaceAndPath(RegeneratingBlocks.MOD_ID, "lang/en_us.json"), working);
-    }
-
-    public void addRegeneratingAesthetic(Regenerable block)
-    {
-        // determines what the block looks like while regenerating
-        String modelLocation = block.namespace + ":block/" + block.blockName;
-
-        files.put(ResourceLocation.fromNamespaceAndPath(RegeneratingBlocks.MOD_ID, "blockstates/" + block.GetRegeneratingBlockName() + ".json"),
-                "{\n" +
-                "  \"variants\": {\n" +
-                "    \"\": { \"model\": \"" + modelLocation + "\" }\n" +
-                "  }\n" +
-                "}"
-        );
+        // populate json files dynamically ie via:
+        // files.put(ResourceLocation.fromNamespaceAndPath(RegeneratingBlocks.MOD_ID, "lang/en_us.json"), "contents of json file");
     }
 
     @Override
@@ -92,16 +54,11 @@ public class DynamicResourcePack extends AbstractPackResources {
 
     @Override
     public void listResources(PackType type, String namespace, String path, ResourceOutput output) {
-
         files.keySet().forEach(location -> {
             if (location.getPath().startsWith(path)) {
                 output.accept(location, this.getResource(type, location));
             }
         });
-
-        if (path.startsWith("neoforge/biome_modifier")) {
-            RegeneratingBlocks.log("test");
-        }
     }
 
     @Override public Set<String> getNamespaces(PackType t) { return Set.of(RegeneratingBlocks.MOD_ID, "minecraft"); }

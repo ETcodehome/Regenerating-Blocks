@@ -1,6 +1,7 @@
 package me.psiber.regenerating_blocks;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
+import me.psiber.regenerating_blocks.config.ConfigBlocks;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;

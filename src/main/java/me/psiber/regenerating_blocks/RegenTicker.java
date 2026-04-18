@@ -1,9 +1,12 @@
 package me.psiber.regenerating_blocks;
 
+import me.psiber.regenerating_blocks.config.ConfigManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LevelEvent;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -20,7 +23,9 @@ public class RegenTicker {
     @SubscribeEvent
     public static void onLevelTick(LevelTickEvent.Post event) {
 
-        if (!(event.getLevel() instanceof ServerLevel level)) return;
+        if (!(event.getLevel() instanceof ServerLevel level)){
+            return;
+        }
 
         // Guard against updates more than 4 times per second (20 tps / 5 = 4)
         // 250ms maximum frequency
@@ -29,13 +34,14 @@ public class RegenTicker {
 
         // Use an iterator or removeIf for thread-safe modification
         RegenManager.REGENERATING_BLOCKS.entrySet().removeIf(entry -> {
-            RegenManager.WorldPos pos = entry.getKey();
+            RegenManager.WorldPos key = entry.getKey();
             RegenManager.RegenData data = entry.getValue();
+            ServerLevel keyLevel = level.getServer().getLevel(key.dimension());
 
             // Check if we are finished
             if (currentTime >= data.endTime) {
-                level.destroyBlockProgress(pos.hashCode() + salt, pos.pos(), -1);
-                spawnSubtleEffect(level, pos.pos());
+                keyLevel.destroyBlockProgress(key.hashCode() + salt, key.pos(), -1);
+                spawnSubtleEffect(keyLevel, key.pos());
                 return true; // removes from the block set
             }
 
@@ -52,22 +58,18 @@ public class RegenTicker {
             boolean needsStageUpdate = currentStage != data.lastVisualStage;
             if (needsStageUpdate){
                 data.lastVisualStage = currentStage;
-                level.levelEvent(LevelEvent.LAVA_FIZZ, pos.pos(), Block.getId(event.getLevel().getBlockState(pos.pos())));
+                keyLevel.levelEvent(LevelEvent.LAVA_FIZZ, key.pos(), Block.getId(event.getLevel().getBlockState(key.pos())));
             }
 
             // Only send an update if the stage has changed (optimization)
             boolean needsCrackRefresh = Math.abs(currentTime - data.lastStageUpdate) >= maxTicksBetweenUpdates;
             if (needsCrackRefresh || needsStageUpdate) {
-                level.destroyBlockProgress(pos.hashCode() + salt, pos.pos(), currentStage);
-                data.lastStageUpdate = level.getGameTime();
+                keyLevel.destroyBlockProgress(key.hashCode() + salt, key.pos(), currentStage);
+                data.lastStageUpdate = keyLevel.getGameTime();
             }
 
             return false;
         });
-    }
-
-    public static void handleBreak() {
-
     }
 
     private static void sendRandomParticles(ServerLevel level, BlockPos pos){

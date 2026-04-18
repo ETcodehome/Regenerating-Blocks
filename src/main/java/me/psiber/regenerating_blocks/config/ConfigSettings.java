@@ -1,4 +1,4 @@
-package me.psiber.regenerating_blocks;
+package me.psiber.regenerating_blocks.config;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 

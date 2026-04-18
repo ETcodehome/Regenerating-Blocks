@@ -1,5 +1,6 @@
 package me.psiber.regenerating_blocks;
 
+import me.psiber.regenerating_blocks.config.ConfigManager;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;

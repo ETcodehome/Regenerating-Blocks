@@ -46,6 +46,7 @@ public class RegenManager {
         }
 
         WorldPos key = new WorldPos(level.dimension(), pos.immutable());
+        RegeneratingBlocks.log("Cached break: " + key);
         REGENERATING_BLOCKS.put(key, new RegenData(currentTime, regenAfter));
     }
 

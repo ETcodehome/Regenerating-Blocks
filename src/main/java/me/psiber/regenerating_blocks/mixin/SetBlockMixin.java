@@ -111,11 +111,13 @@ public abstract class SetBlockMixin {
             if (newState.isAir()){
                 RegenManager.cacheBreakData(level, pos);
                 level.levelEvent(2001, pos, Block.getId(oldState));
-                cir.setReturnValue(false);
+                cir.setReturnValue(true);
                 RegeneratingBlocks.log("Allowed break, but prevented block destruction");
-                return;
+                level.getServer().execute(() -> level.setBlock(pos, oldState, flags));
             }
         }
+
+
     }
 
 }
