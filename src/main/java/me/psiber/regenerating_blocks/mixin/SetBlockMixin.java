@@ -37,11 +37,7 @@ public abstract class SetBlockMixin {
     )
     private void onPreDestroyBlock(BlockPos pos, boolean dropBlock, Entity breaker, int maxUpdateDepth, CallbackInfoReturnable<Boolean> cir) {
 
-        RegeneratingBlock.log("ON PRE DESTROY");
-
         ServerLevel level = (ServerLevel) (Object) this;
-
-        // 1. Resolve State - Get the block currently at the position
         BlockState oldState = level.getBlockState(pos);
 
         // Performance Guard: Exit if not a block we care about
@@ -49,7 +45,7 @@ public abstract class SetBlockMixin {
             return;
         }
 
-        // 2. Logic Guard: If currently regenerating, never allow break (and thus no drops)
+        // If currently regenerating, never allow break (and thus no drops)
         RegenManager.WorldPos key = new RegenManager.WorldPos(level.dimension(), pos.immutable());
         if (RegenManager.isRegenerating(key)) {
             RegeneratingBlock.log("Intercepted break: Block is actively regenerating. Aborting destruction.");
@@ -69,7 +65,7 @@ public abstract class SetBlockMixin {
 
         BlockState oldState = level.getBlockState(pos);
         if (!ModBlocks.supportedOriginalBlocks.contains(oldState.getBlock())){
-            RegeneratingBlock.log("Block isn't supported, doing nothing");
+            // RegeneratingBlock.log("Block isn't supported, doing nothing"); NOISY
             return;
         }
 
@@ -123,14 +119,6 @@ public abstract class SetBlockMixin {
                 level.levelEvent(2001, pos, Block.getId(oldState));
                 cir.setReturnValue(false);
                 RegeneratingBlock.log("Allowed break, but prevented block destruction");
-                return;
-            }
-
-            // block is transitioning to a different block
-            boolean disableTransitions = ConfigManager.getSettings().disableTransitions();
-            if (disableTransitions){
-                cir.setReturnValue(false);
-                RegeneratingBlock.log("Obeyed config and prevented transition to " + newState);
                 return;
             }
         }

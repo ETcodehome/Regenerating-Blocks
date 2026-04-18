@@ -156,64 +156,6 @@ public class RegeneratingBlock extends Block {
     }
 
     @Override
-    public PushReaction getPistonPushReaction(BlockState state) {
-
-        if (ConfigManager.getSettings().disablePushing()){
-            log("Prevented block being pushed (obeyed config value)");
-            return PushReaction.BLOCK;
-        }
-
-        // Otherwise, default handling
-        return super.getPistonPushReaction(state);
-    }
-
-    @Override
-    public float getExplosionResistance(BlockState state, BlockGetter level, BlockPos pos, Explosion explosion) {
-
-        if (level instanceof Level l) {
-            RegenManager.WorldPos key = new RegenManager.WorldPos(l.dimension(), pos.immutable());
-            if (RegenManager.isRegenerating(key)) {
-                log("Provided bedrock values because block should be unbreakable");
-                return 3600000.0F;
-            }
-        }
-
-        // Otherwise, default handling
-        return super.getExplosionResistance(state, level, pos, explosion);
-    }
-
-    @Override
-    public float getDestroyProgress(BlockState state, net.minecraft.world.entity.player.Player player, net.minecraft.world.level.BlockGetter world, BlockPos pos) {
-
-        if (world instanceof Level l) {
-            RegenManager.WorldPos key = new RegenManager.WorldPos(l.dimension(), pos.immutable());
-            // never break a block while it is regenerating
-            if (RegenManager.isRegenerating(key)) {
-                log("Progress 0.0 because block is regenerating");
-                return 0.0F;
-            }
-        }
-
-        // Delegate to the source block. That way we respect all the source blocks respective tags.
-        return this.block.GetSourceBlock().defaultBlockState().getDestroyProgress(player, world, pos);
-    }
-
-    @Override
-    public boolean canEntityDestroy(BlockState state, BlockGetter level, BlockPos pos, net.minecraft.world.entity.Entity entity) {
-        if (level instanceof Level l) {
-            RegenManager.WorldPos key = new RegenManager.WorldPos(l.dimension(), pos.immutable());
-            // If it's regenerating, no entity (including contraptions) can destroy it.
-            if (RegenManager.isRegenerating(key)) {
-                log("Destruction prevented because block is regenerating)");
-                return false;
-            }
-        }
-
-        // Otherwise, default handling
-        return super.canEntityDestroy(state, level, pos, entity);
-    }
-
-    @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
 
         if (isMoving) {
@@ -251,20 +193,6 @@ public class RegeneratingBlock extends Block {
             log("Block broken by non-player. Setting back to a regenerating block.");
             //super.onRemove(state, level, pos, newState, isMoving);
             makeRegenerating(level, pos, state);
-            return;
-        }
-
-        // Handles almost all conversions, moss, sculk spread, burning to ash etc
-        boolean disableTransitions = ConfigManager.getSettings().disableTransitions();
-        if (disableTransitions && !isAir) {
-            log("Obeyed config setting. Prevented block transitioning to " + newState.getBlock().getName().toString());
-            resetBlockToState(level, pos, state);
-            return;
-        }
-
-        if (!isAir && !disableTransitions) {
-            log("Obeyed config setting. Allowed block to transition to " + newState.getBlock().getName().toString());
-            // allow the transition
             return;
         }
 

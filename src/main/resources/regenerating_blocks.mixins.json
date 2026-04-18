@@ -5,8 +5,6 @@
   "compatibilityLevel": "JAVA_21",
   "refmap": "regenerating_blocks.refmap.json",
   "mixins": [
-    "BlockStateTagMixin",
-    "HolderTagMixin",
     "SetBlockMixin",
     "BlockStateMixin"
   ],

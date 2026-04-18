@@ -39,6 +39,16 @@ public class ChunkMirrorHandler {
         }
     }
 
+    @SubscribeEvent
+    public static void onDataSave(ChunkDataEvent.Save event) {
+        long posLong = event.getChunk().getPos().toLong();
+        // If we've mirrored this chunk during this session,
+        // make sure the "Mirrored" flag is saved to the disk NBT.
+        if (ALREADY_MIRRORED.contains(posLong)) {
+            event.getData().putBoolean("RegenMirrored", true);
+        }
+    }
+
     /**
      * Step 2: Act once the chunk is physically in the level.
      */
@@ -63,6 +73,12 @@ public class ChunkMirrorHandler {
         ChunkPos pos = chunk.getPos();
         long posLong = pos.toLong();
 
+        // Session check (fast)
+        if (ALREADY_MIRRORED.contains(posLong)) {
+            // Noisy RegeneratingBlock.log("Chunk mirrored already: " + chunk);
+            return;
+        }
+
         // 1. Only process FULL chunks in dimensions we care about
         if (!chunk.getPersistedStatus().isOrAfter(ChunkStatus.FULL)) {
             RegeneratingBlock.log("FAILED MIRRORING OF CHUNK (NOT READY) chunk: " + chunk);
@@ -72,33 +88,39 @@ public class ChunkMirrorHandler {
         ResourceKey<Level> targetKey = getMirrorKey(sourceLevel.dimension());
         if (targetKey == null) return;
 
-        // 2. Check if we already processed this chunk in Step 1
-        if (ALREADY_MIRRORED.contains(posLong)) {
+        // 3. Perform Mirroring Logic
+        ServerLevel mirrorLevel = sourceLevel.getServer().getLevel(targetKey);
+        if (mirrorLevel == null) return;
+
+        // Persisted check (once off slow)
+        boolean alreadyInMirror = mirrorLevel.getChunkSource().chunkMap.read(pos).join()
+                .map(nbt -> nbt.getBoolean("RegenMirrored"))
+                .orElse(false);
+
+        if (alreadyInMirror) {
+            RegeneratingBlock.log("Mirror chunk already exists: " + pos + " to " + targetKey.location());
+            ALREADY_MIRRORED.add(posLong);
             return;
         }
 
-        // 3. Perform Mirroring Logic
-        ServerLevel mirrorLevel = sourceLevel.getServer().getLevel(targetKey);
-        if (mirrorLevel != null) {
-            RegeneratingBlock.log("Mirroring pristine chunk: " + pos + " to " + targetKey.location());
+        RegeneratingBlock.log("Mirroring pristine chunk: " + pos + " to " + targetKey.location());
 
-            // Create NBT from the current state (which at this moment is freshly generated/loaded)
-            CompoundTag mirrorData = ChunkSerializer.write(sourceLevel, chunk);
+        // Create NBT from the current state (which at this moment is freshly generated/loaded)
+        CompoundTag mirrorData = ChunkSerializer.write(sourceLevel, chunk);
 
-            // Strip entities/block entities to keep it as a terrain-only snapshot
-            mirrorData.remove("entities");
-            mirrorData.remove("block_entities");
-            mirrorData.remove("PostProcessing");
+        // Strip entities/block entities to keep it as a terrain-only snapshot
+        mirrorData.remove("entities");
+        mirrorData.remove("block_entities");
+        mirrorData.remove("PostProcessing");
 
-            // Set the flag for both the Mirror and the Overworld
-            mirrorData.putBoolean("RegenMirrored", true);
+        // Set the flag for both the Mirror and the Overworld
+        mirrorData.putBoolean("RegenMirrored", true);
 
-            // Injects into Mirror storage
-            mirrorLevel.getChunkSource().chunkMap.write(pos, mirrorData);
+        // Injects into Mirror storage
+        mirrorLevel.getChunkSource().chunkMap.write(pos, mirrorData);
 
-            // Mark as mirrored so that we don't repeat this for the rest of the session
-            ALREADY_MIRRORED.add(posLong);
-        }
+        // Mark as mirrored so that we don't repeat this for the rest of the session
+        ALREADY_MIRRORED.add(posLong);
     }
 
     @SubscribeEvent
