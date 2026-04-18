@@ -49,7 +49,7 @@ public class RegeneratingBlocks {
 
         // append virtual resources
         modEventBus.addListener(PackFinderHandler::register);
-        NeoForge.EVENT_BUS.register(BlockBreakHandler.class);
+        //NeoForge.EVENT_BUS.register(BlockBreakHandler.class);
 
     }
 

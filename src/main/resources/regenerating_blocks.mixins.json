@@ -3,10 +3,12 @@
   "minVersion": "0.8",
   "package": "me.psiber.regenerating_blocks.mixin",
   "compatibilityLevel": "JAVA_21",
+  "refmap": "regenerating_blocks.refmap.json",
   "mixins": [
     "BlockStateTagMixin",
     "HolderTagMixin",
-    "SetBlockMixin"
+    "SetBlockMixin",
+    "BlockStateMixin"
   ],
   "injectors": {
     "defaultRequire": 1
