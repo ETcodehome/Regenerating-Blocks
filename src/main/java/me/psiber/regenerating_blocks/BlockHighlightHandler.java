@@ -27,13 +27,14 @@ public class BlockHighlightHandler {
         }
 
         // Guard against rendering when there is no valid hit result
-        BlockHitResult hitResult = (BlockHitResult) Minecraft.getInstance().hitResult;
+        HitResult hitResult = Minecraft.getInstance().hitResult;
         if (!(hitResult != null && hitResult.getType() == HitResult.Type.BLOCK)) {
             return;
         }
 
         // Guard against rendering anything unless the targeted block is regenerating
-        BlockPos targetPos = hitResult.getBlockPos();
+        BlockHitResult blockHitResult = (BlockHitResult) hitResult;
+        BlockPos targetPos = blockHitResult.getBlockPos();
         RegenManager.WorldPos key = new RegenManager.WorldPos(event.getCamera().getEntity().level().dimension(), targetPos);
         if (!RegenManager.isRegenerating(key)) {
             return;

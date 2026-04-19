@@ -8,6 +8,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -68,6 +69,25 @@ public abstract class SetBlockMixin {
             return;
         }
 
+        //////////////////////////// CLIENT /////////////////////////////////////////
+
+        // Prevents the "Flicker" from drills/players by telling the client the block can't be broken.
+        if (level.isClientSide()) {
+            RegenManager.WorldPos key = new RegenManager.WorldPos(((Level)(Object)this).dimension(), pos.immutable());
+            if (RegenManager.isRegenerating(key)) {
+                RegeneratingBlocks.log("Client realised block is regenerating and ignored the break.");
+
+                // prevent blatting stuff if the new state is air (can cook deliberate setblocks)
+                if (newState.isAir()) {
+                    cir.setReturnValue(false);
+                }
+                return;
+            }
+            // Note: We don't check the Mirror here because it's Server-only.
+            RegeneratingBlocks.log("Client saw a non regenerating break event and took no further action.");
+            return;
+        }
+
         //////////////////////////// SERVER /////////////////////////////////////////
 
         if (level instanceof ServerLevel serverLevel) {
@@ -92,19 +112,33 @@ public abstract class SetBlockMixin {
             }
 
             // Guard - Naturally Spawned Check
-            if (!mirrorLevel.getBlockState(pos).is(oldState.getBlock())) {
+            BlockState mirrorState = mirrorLevel.getBlockState(pos);
+            boolean mirrorBlockMatchesPreviousState = !oldState.isAir() && mirrorState.getBlock() == oldState.getBlock();
+            if (!mirrorBlockMatchesPreviousState) {
                 RegeneratingBlocks.log("Server did nothing. Mirror world block didn't match block being broken.");
                 return;
             }
 
-            // expected standard break pathway
-            if (newState.isAir()){
-                RegenManager.cacheBreakData(level, pos);
-                level.levelEvent(2001, pos, Block.getId(oldState));
-                cir.setReturnValue(true);
-                RegeneratingBlocks.log("Allowed break, but prevented block destruction");
-                level.getServer().execute(() -> level.setBlock(pos, oldState, flags));
+            /////////// BELOW HERE THE BLOCK IS A REGENERATING BLOCK /////////////
+
+            // Guard against regenerating the current state (stupid)
+            if (newState.equals(oldState)){
+                cir.setReturnValue(false);
+                return;
             }
+
+            // explicitly allow grass blocks to change property states
+            // deals with annoying snow behavior
+            if (newState.getBlock() == Blocks.GRASS_BLOCK){
+                return;
+            }
+
+            // expected standard break pathway
+            RegenManager.cacheBreakData(level, pos);
+            level.levelEvent(2001, pos, Block.getId(oldState));
+            cir.setReturnValue(true);
+            RegeneratingBlocks.log("Allowed break, but prevented block destruction");
+            level.setBlock(pos, oldState, flags);
         }
 
     }
