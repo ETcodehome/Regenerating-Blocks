@@ -26,7 +26,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-@EventBusSubscriber(modid = RegeneratingBlocks.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
+@EventBusSubscriber(modid = RegeneratingBlocks.MOD_ID)
 public class CommandDumpBlocks {
 
     @SubscribeEvent
@@ -229,7 +229,7 @@ public class CommandDumpBlocks {
                         source.sendFailure(Component.literal("Failed to write file: " + e.getMessage()));
                     }
 
-                    // Write the rejected file
+                    // Write the processing record
                     try (FileWriter writer = new FileWriter(processingPath.toFile())) {
                         for (String line : processingResults) {
                             writer.write(line + System.lineSeparator());

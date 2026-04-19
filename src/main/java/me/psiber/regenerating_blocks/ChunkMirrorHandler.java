@@ -19,7 +19,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.level.ChunkEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 
-@EventBusSubscriber(modid = RegeneratingBlocks.MOD_ID, bus = EventBusSubscriber.Bus.GAME)
+@EventBusSubscriber(modid = RegeneratingBlocks.MOD_ID)
 public class ChunkMirrorHandler {
 
     @SubscribeEvent

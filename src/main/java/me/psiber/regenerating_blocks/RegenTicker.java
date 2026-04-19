@@ -15,8 +15,6 @@ public class RegenTicker {
     public static final int salt = 5037;
     private static final int maxTicksBetweenUpdates = 380;
 
-    private static long lastTickProcessed = 0;
-
     @SubscribeEvent
     public static void onLevelTick(LevelTickEvent.Post event) {
 
@@ -27,11 +25,6 @@ public class RegenTicker {
         // Guard against updates more than 4 times per second (20 tps / 5 = 4)
         // 250ms maximum frequency
         final long currentTime = level.getGameTime();
-        if (lastTickProcessed == currentTime){
-            return;
-        }
-        lastTickProcessed = currentTime;
-
         if (currentTime % 5 != 0) return;
 
         // Use an iterator or removeIf for thread-safe modification
