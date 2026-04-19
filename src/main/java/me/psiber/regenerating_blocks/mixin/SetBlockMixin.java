@@ -3,6 +3,7 @@ package me.psiber.regenerating_blocks.mixin;
 import me.psiber.regenerating_blocks.RegenManager;
 import me.psiber.regenerating_blocks.RegeneratingBlocks;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
@@ -36,7 +37,8 @@ public abstract class SetBlockMixin {
         BlockState oldState = level.getBlockState(pos);
 
         // Performance Guard: Exit if not a block we care about
-        if (!RegeneratingBlocks.supportedOriginalBlocks.contains(oldState.getBlock())) {
+        String id = BuiltInRegistries.BLOCK.getKey(oldState.getBlock()).toString();
+        if (!RegeneratingBlocks.supportedOriginalBlocks.contains(id)) {
             return;
         }
 
@@ -64,8 +66,8 @@ public abstract class SetBlockMixin {
             return;
         }
 
-        if (!RegeneratingBlocks.supportedOriginalBlocks.contains(oldState.getBlock())){
-            // RegeneratingBlock.log("Block isn't supported, doing nothing"); NOISY
+        String id = BuiltInRegistries.BLOCK.getKey(oldState.getBlock()).toString();
+        if (!RegeneratingBlocks.supportedOriginalBlocks.contains(id)){
             return;
         }
 
@@ -84,7 +86,7 @@ public abstract class SetBlockMixin {
                 return;
             }
             // Note: We don't check the Mirror here because it's Server-only.
-            RegeneratingBlocks.log("Client saw a non regenerating break event and took no further action.");
+            // Noisy RegeneratingBlocks.log("Client saw a non regenerating break event and took no further action.");
             return;
         }
 
@@ -115,7 +117,7 @@ public abstract class SetBlockMixin {
             BlockState mirrorState = mirrorLevel.getBlockState(pos);
             boolean mirrorBlockMatchesPreviousState = !oldState.isAir() && mirrorState.getBlock() == oldState.getBlock();
             if (!mirrorBlockMatchesPreviousState) {
-                RegeneratingBlocks.log("Server did nothing. Mirror world block didn't match block being broken.");
+                // Noisy RegeneratingBlocks.log("Server did nothing. Mirror world block didn't match block being broken.");
                 return;
             }
 
