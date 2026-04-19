@@ -44,6 +44,19 @@
 - Breaks are not modified, respect tool properties and enchantments (all tools, not just pickaxes). 
 - Breaks match source block drop experience behaviour.
 
+# Configuration
+- config/regenerating_blocks.json
+  Determines what blocks regenerate and how many seconds it takes to do so.
+- config/regenerating_blocks_settings.json
+  Has general settings for the mod.
+  "show_particles" controls if regeneration stages and regeneration completion generate particle effects.
+  "verbose_logging" logs the logic path the mod walks. It's unplayably verbose and intended for diagnostic work (you've been warned).
+
+# Commands
+- /suggestblocks
+  Op only, generates a list of blocks based on loaded mods that is saved to suggested_blocks.txt in server root folder. 
+  Contents can be directly pasted into config/regenerating_blocks.json to customise what blocks regenerate.
+
 # Bugs
 - Much more likely to be addressed if you raise an issue.
 
