@@ -63,21 +63,6 @@ public abstract class SetBlockMixin {
             return;
         }
 
-        //////////////////////////// CLIENT /////////////////////////////////////////
-
-        // Prevents the "Flicker" from drills/players by telling the client the block can't be broken.
-        if (level.isClientSide()) {
-            RegenManager.WorldPos key = new RegenManager.WorldPos(((Level)(Object)this).dimension(), pos.immutable());
-            if (RegenManager.isRegenerating(key)) {
-                RegeneratingBlocks.log("Client realised block is regenerating and ignored the break.");
-                cir.setReturnValue(false);
-                return;
-            }
-            // Note: We don't check the Mirror here because it's Server-only.
-            RegeneratingBlocks.log("Client saw a non regenerating break event and took no further action.");
-            return;
-        }
-
         //////////////////////////// SERVER /////////////////////////////////////////
 
         if (level instanceof ServerLevel serverLevel) {

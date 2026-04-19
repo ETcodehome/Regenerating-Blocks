@@ -32,12 +32,8 @@ public class RegenManager {
     public static void cacheBreakData(Level level, BlockPos pos) {
         long currentTime = level.getGameTime();
         BlockState state = level.getBlockState(pos);
-        String id = String.valueOf(BuiltInRegistries.BLOCK.getKey(state.getBlock()));
+        String id = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
         Integer regenAfter = RegeneratingBlocks.regenTimers.get(id);
-        if (regenAfter == null){
-            throw new NullPointerException("No regeneration time found for this block!");
-        }
-
         WorldPos key = new WorldPos(level.dimension(), pos.immutable());
         RegeneratingBlocks.log("Cached break: " + key);
         REGENERATING_BLOCKS.put(key, new RegenData(currentTime, regenAfter));
