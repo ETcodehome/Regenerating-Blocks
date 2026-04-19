@@ -56,8 +56,13 @@ public abstract class SetBlockMixin {
     )
     private void onUniversalSetBlock(BlockPos pos, BlockState newState, int flags, int recursion, CallbackInfoReturnable<Boolean> cir) {
         Level level = (Level) (Object) this;
-
         BlockState oldState = level.getBlockState(pos);
+
+        // Guard against processing nonsense. Yes, it happens (synchronicity issues?) and it's annoying.
+        if (newState.isAir() && oldState.isAir()){
+            return;
+        }
+
         if (!RegeneratingBlocks.supportedOriginalBlocks.contains(oldState.getBlock())){
             // RegeneratingBlock.log("Block isn't supported, doing nothing"); NOISY
             return;
