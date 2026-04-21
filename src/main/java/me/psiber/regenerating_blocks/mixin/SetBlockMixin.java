@@ -8,7 +8,6 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
@@ -131,13 +130,17 @@ public abstract class SetBlockMixin {
 
             // explicitly allow grass blocks to change property states
             // deals with annoying snow behavior
-            if (newState.getBlock() == Blocks.GRASS_BLOCK){
+            if (oldState.getBlock() == Blocks.GRASS_BLOCK && newState.getBlock() == Blocks.GRASS_BLOCK){
+                return;
+            }
+
+            // explicitly allow grass blocks to become dirt
+            if (oldState.getBlock() == Blocks.GRASS_BLOCK && newState.getBlock() == Blocks.DIRT){
                 return;
             }
 
             // expected standard break pathway
             RegenManager.cacheBreakData(level, pos);
-            level.levelEvent(2001, pos, Block.getId(oldState));
             cir.setReturnValue(true);
             RegeneratingBlocks.log("Allowed break, but prevented block destruction");
             level.setBlock(pos, oldState, flags);
