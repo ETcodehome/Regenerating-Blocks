@@ -14,7 +14,7 @@ import java.util.List;
 public class RegeneratingBlocks {
     public static final String MOD_ID = "regenerating_blocks";
     public static HashMap<String, Integer> regenTimers;
-    public static HashSet<Block> supportedOriginalBlocks;
+    public static HashSet<String> supportedOriginalBlocks;
     private static boolean loggingActive;
 
     public RegeneratingBlocks(IEventBus modEventBus, ModContainer modContainer) {
@@ -27,12 +27,13 @@ public class RegeneratingBlocks {
         loggingActive = ConfigManager.getSettings().verboseLogging();
 
         // Populate a lookup table so we can get all configuration data from blockstates
-        supportedOriginalBlocks = new HashSet<Block>();
+        supportedOriginalBlocks = new HashSet<String>();
         regenTimers = new HashMap<String, Integer>();
         for (Regenerable block : blocksFromConfig )
         {
-            supportedOriginalBlocks.add(block.GetSourceBlock());
-            regenTimers.put(block.namespace + ":" + block.blockName, block.regenAfter);
+            String id = block.namespace + ":" + block.blockName;
+            supportedOriginalBlocks.add(id);
+            regenTimers.put(id, block.regenAfter);
         }
 
         // append virtual resources

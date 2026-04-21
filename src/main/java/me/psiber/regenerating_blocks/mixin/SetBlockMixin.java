@@ -3,11 +3,12 @@ package me.psiber.regenerating_blocks.mixin;
 import me.psiber.regenerating_blocks.RegenManager;
 import me.psiber.regenerating_blocks.RegeneratingBlocks;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -35,7 +36,8 @@ public abstract class SetBlockMixin {
         BlockState oldState = level.getBlockState(pos);
 
         // Performance Guard: Exit if not a block we care about
-        if (!RegeneratingBlocks.supportedOriginalBlocks.contains(oldState.getBlock())) {
+        String id = BuiltInRegistries.BLOCK.getKey(oldState.getBlock()).toString();
+        if (!RegeneratingBlocks.supportedOriginalBlocks.contains(id)) {
             return;
         }
 
@@ -56,10 +58,34 @@ public abstract class SetBlockMixin {
     )
     private void onUniversalSetBlock(BlockPos pos, BlockState newState, int flags, int recursion, CallbackInfoReturnable<Boolean> cir) {
         Level level = (Level) (Object) this;
-
         BlockState oldState = level.getBlockState(pos);
-        if (!RegeneratingBlocks.supportedOriginalBlocks.contains(oldState.getBlock())){
-            // RegeneratingBlock.log("Block isn't supported, doing nothing"); NOISY
+
+        // Guard against processing nonsense. Yes, it happens (synchronicity issues?) and it's annoying.
+        if (newState.isAir() && oldState.isAir()){
+            return;
+        }
+
+        String id = BuiltInRegistries.BLOCK.getKey(oldState.getBlock()).toString();
+        if (!RegeneratingBlocks.supportedOriginalBlocks.contains(id)){
+            return;
+        }
+
+        //////////////////////////// CLIENT /////////////////////////////////////////
+
+        // Prevents the "Flicker" from drills/players by telling the client the block can't be broken.
+        if (level.isClientSide()) {
+            RegenManager.WorldPos key = new RegenManager.WorldPos(((Level)(Object)this).dimension(), pos.immutable());
+            if (RegenManager.isRegenerating(key)) {
+                RegeneratingBlocks.log("Client realised block is regenerating and ignored the break.");
+
+                // prevent blatting stuff if the new state is air (can cook deliberate setblocks)
+                if (newState.isAir()) {
+                    cir.setReturnValue(false);
+                }
+                return;
+            }
+            // Note: We don't check the Mirror here because it's Server-only.
+            // Noisy RegeneratingBlocks.log("Client saw a non regenerating break event and took no further action.");
             return;
         }
 
@@ -87,19 +113,37 @@ public abstract class SetBlockMixin {
             }
 
             // Guard - Naturally Spawned Check
-            if (!mirrorLevel.getBlockState(pos).is(oldState.getBlock())) {
-                RegeneratingBlocks.log("Server did nothing. Mirror world block didn't match block being broken.");
+            BlockState mirrorState = mirrorLevel.getBlockState(pos);
+            boolean mirrorBlockMatchesPreviousState = !oldState.isAir() && mirrorState.getBlock() == oldState.getBlock();
+            if (!mirrorBlockMatchesPreviousState) {
+                // Noisy RegeneratingBlocks.log("Server did nothing. Mirror world block didn't match block being broken.");
+                return;
+            }
+
+            /////////// BELOW HERE THE BLOCK IS A REGENERATING BLOCK /////////////
+
+            // Guard against regenerating the current state (stupid)
+            if (newState.equals(oldState)){
+                cir.setReturnValue(false);
+                return;
+            }
+
+            // explicitly allow grass blocks to change property states
+            // deals with annoying snow behavior
+            if (oldState.getBlock() == Blocks.GRASS_BLOCK && newState.getBlock() == Blocks.GRASS_BLOCK){
+                return;
+            }
+
+            // explicitly allow grass blocks to become dirt
+            if (oldState.getBlock() == Blocks.GRASS_BLOCK && newState.getBlock() == Blocks.DIRT){
                 return;
             }
 
             // expected standard break pathway
-            if (newState.isAir()){
-                RegenManager.cacheBreakData(level, pos);
-                level.levelEvent(2001, pos, Block.getId(oldState));
-                cir.setReturnValue(true);
-                RegeneratingBlocks.log("Allowed break, but prevented block destruction");
-                level.getServer().execute(() -> level.setBlock(pos, oldState, flags));
-            }
+            RegenManager.cacheBreakData(level, pos);
+            cir.setReturnValue(true);
+            RegeneratingBlocks.log("Allowed break, but prevented block destruction");
+            level.setBlock(pos, oldState, flags);
         }
 
     }

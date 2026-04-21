@@ -3,9 +3,8 @@ package me.psiber.regenerating_blocks;
 import me.psiber.regenerating_blocks.config.ConfigManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.LevelEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
@@ -37,7 +36,7 @@ public class RegenTicker {
             // Check if we are finished
             if (currentTime >= data.endTime) {
                 keyLevel.destroyBlockProgress(key.hashCode() + salt, key.pos(), -1);
-                spawnSubtleEffect(keyLevel, key.pos());
+                spawnFinishEffect(keyLevel, key.pos());
                 return true; // removes from the block set
             }
 
@@ -54,9 +53,6 @@ public class RegenTicker {
             boolean needsStageUpdate = currentStage != data.lastVisualStage;
             if (needsStageUpdate){
                 data.lastVisualStage = currentStage;
-                if (ConfigManager.getSettings().showParticles()) {
-                    keyLevel.levelEvent(LevelEvent.LAVA_FIZZ, key.pos(), Block.getId(event.getLevel().getBlockState(key.pos())));
-                }
             }
 
             // Only send an update if the stage has changed (optimization)
@@ -70,22 +66,24 @@ public class RegenTicker {
         });
     }
 
-    private static void spawnSubtleEffect(ServerLevel level, BlockPos pos) {
+    private static void spawnFinishEffect(ServerLevel level, BlockPos pos) {
 
         // Disable particles if user has opted out via config setting
         if (!ConfigManager.getSettings().showParticles()) { return; }
 
-        double offset = 0.25;
-        level.sendParticles(ParticleTypes.SCRAPE,
+        final SimpleParticleType particle = ParticleTypes.SCRAPE;
+        final double offset = 0.25;
+
+        level.sendParticles(particle,
                 pos.getX() -0.2, pos.getY() + 0.5, pos.getZ()+0.5,
                 5, offset, offset, offset, 0.1);
-        level.sendParticles(ParticleTypes.SCRAPE,
+        level.sendParticles(particle,
                 pos.getX()  +1.2, pos.getY() + 0.5, pos.getZ()+0.5,
                 5, offset, offset, offset, 0.1);
-        level.sendParticles(ParticleTypes.SCRAPE,
+        level.sendParticles(particle,
                 pos.getX() +0.5, pos.getY() + 0.5, pos.getZ() -0.2,
                 5, offset, offset, offset, 0.1);
-        level.sendParticles(ParticleTypes.SCRAPE,
+        level.sendParticles(particle,
                 pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() +1.2,
                 5, offset, offset, offset, 0.1);
     }
